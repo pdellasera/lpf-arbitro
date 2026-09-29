@@ -25,4 +25,21 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Comportamiento tipo app móvil */
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Altura tolerante a la barra dinámica del navegador móvil (100dvh con fallback a 100vh). */
+.app-h {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Padding vertical con safe areas (notch / barra de gestos). */
+.safe-y {
+  padding-top: max(1.5rem, env(safe-area-inset-top));
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
 }

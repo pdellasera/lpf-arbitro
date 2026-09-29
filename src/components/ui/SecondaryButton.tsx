@@ -13,7 +13,6 @@ export function SecondaryButton({ icon, children, className, ...rest }: Secondar
     <motion.button
       type="button"
       whileTap={{ scale: 0.98 }}
-      whileHover={{ scale: 1.01 }}
       className={cn(
         'flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/15 bg-white/5 py-3 text-[15px] font-medium text-white transition-colors duration-200 hover:bg-white/10',
         className,

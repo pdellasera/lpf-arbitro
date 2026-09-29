@@ -22,6 +22,18 @@ npm run build      # compila (tsc + vite)
 npm run preview    # sirve el build de producción
 ```
 
+## Plataformas soportadas
+
+La app está pensada **solo para móvil y tablet**. En pantallas grandes (≥1024px con
+puntero fino — escritorio/portátil con ratón) el login se oculta y se muestra un aviso
+(*"Disponible en móviles y tablets"*). El filtro es 100% CSS (sin JS, sin parpadeo):
+
+```css
+@media (width >= 64rem) and (pointer: fine) { /* login oculto, aviso visible */ }
+```
+
+Los tablets táctiles (incluido iPad en horizontal) **siempre** ven el login.
+
 ## Estructura
 
 ```
@@ -32,11 +44,13 @@ src/
 ├─ features/auth/
 │  ├─ api/authApi.ts            login() + fetchAppVersion() (mock + real via VITE_API_URL)
 │  ├─ hooks/                    useLogin, useAppVersion (React Query)
-│  ├─ components/               LoginScreen, AuthHeader, LoginCard, RememberRow
+│  ├─ components/               LoginScreen, AuthHeader, LoginCard, RememberRow,
+│  │                            DesktopNotice (aviso de escritorio)
 │  └─ types.ts
 ├─ lib/                         queryClient.ts, cn.ts
 └─ index.css                    tokens Tailwind v4 (@theme)
-tools/                          prepare-assets.ps1, measure-*.ps1 (solo análisis)
+tools/                          prepare-assets.ps1, measure-*.ps1 (análisis),
+                                smoke-test.mjs, verify-css.ps1, extract-css.ps1
 ```
 
 ## Paleta (medida del mockup)
@@ -68,3 +82,6 @@ Para conectar un backend real, define `VITE_API_URL` (ver `.env.example`).
   mockup real, se cambian en `LoginCard.tsx` / `AuthHeader.tsx`.
 - `tools/measure-*.ps1` son scripts de análisis por píxeles usados para extraer las medidas;
   no forman parte de la app.
+- Comportamiento móvil: `100dvh` (altura dinámica), safe areas (`env(safe-area-inset-*)`),
+  `overscroll-behavior: none`, `touch-action: manipulation`, inputs ≥16px (evita el zoom de
+  iOS al enfocar) y `interactive-widget=resizes-content` (el teclado no tapa el botón).

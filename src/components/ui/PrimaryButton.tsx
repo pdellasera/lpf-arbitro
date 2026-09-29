@@ -21,7 +21,6 @@ export function PrimaryButton({
     <motion.button
       type="button"
       whileTap={{ scale: 0.98 }}
-      whileHover={{ scale: 1.01 }}
       disabled={disabled || loading}
       className={cn(
         'flex w-full items-center justify-center gap-2 rounded-xl bg-[#0062fd] py-3.5 text-[16px] font-semibold text-white shadow-lg shadow-[#0062fd]/30 transition-colors duration-200 hover:bg-[#1a74ff] disabled:cursor-not-allowed disabled:opacity-60',

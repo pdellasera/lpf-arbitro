@@ -26,7 +26,7 @@ export function TextField({ label, icon, trailing, error, className, ...rest }: 
         <span className="min-w-0 flex-1">
           <span className="block text-[11px] font-medium leading-none text-[#8ca0b5]">{label}</span>
           <input
-            className="mt-1.5 w-full bg-transparent text-[15px] text-white outline-none placeholder:text-white/25"
+            className="mt-1.5 w-full bg-transparent text-[16px] text-white outline-none placeholder:text-white/25"
             {...rest}
           />
         </span>

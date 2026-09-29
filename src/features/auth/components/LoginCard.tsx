@@ -60,18 +60,21 @@ export function LoginCard() {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.32, duration: 0.6, ease: 'easeOut' }}
-      className="w-full rounded-2xl border border-white/10 bg-gradient-to-b from-[#1e314a] to-[#081a2c] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
+      className="w-full rounded-2xl border border-white/10 bg-gradient-to-b from-[#1e314a] to-[#081a2c] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.5)] md:p-8"
     >
       <div className="mb-6">
-        <h2 className="text-[20px] font-bold leading-tight text-white">Iniciar sesión</h2>
+        <h2 className="text-[20px] font-bold leading-tight text-white md:text-[22px]">Iniciar sesión</h2>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 md:gap-5">
         <TextField
           label="Correo electrónico"
           type="email"
           inputMode="email"
           autoComplete="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           placeholder="tucorreo@lpf.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
