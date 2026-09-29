@@ -9,6 +9,24 @@
   --color-input: #122238;
   --color-link: #6fa6ff;
   --color-muted: #8ca0b5;
+  --color-ink: #0f172a;
+  --color-ink-soft: #6b7280;
+  --color-ink-mute: #9aa3b1;
+  --color-page: #f3f5f8;
+  --color-line: #eceef2;
+  --color-goal: #05b56b;
+  --color-goal-soft: #e7f8f0;
+  --color-tint: #eef4fe;
+  --color-tint-line: #d7e6fd;
+  --color-rail: #0f2135;
+  --color-panel: #001222;
+  --color-live: #2fe07b;
+  --color-grass-a: #3d6e11;
+  --color-grass-b: #56872a;
+  --color-card-yellow: #dcb90a;
+  --color-sub: #00c258;
+  --color-incident: #6c1be7;
+  --color-pick: #c80313;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
@@ -42,4 +60,20 @@ body {
 .safe-y {
   padding-top: max(1.5rem, env(safe-area-inset-top));
   padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+
+/* Scrollbar fina para el panel de eventos. */
+.no-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.no-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.no-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+}
+.no-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }

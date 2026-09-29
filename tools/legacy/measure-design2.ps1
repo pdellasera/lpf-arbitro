@@ -3,7 +3,7 @@
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
-$root = Split-Path -Parent $PSScriptRoot
+$root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $bmp  = [System.Drawing.Bitmap]::FromFile((Join-Path $root 'assets\login_screem.png'))
 $W = $bmp.Width; $H = $bmp.Height
 

@@ -39,6 +39,34 @@ if (webpMatch) {
   console.log('  webp     ->', w.status, w.type)
 }
 
+// PWA: manifest, service worker e iconos
+const manifestRes = await get('/manifest.webmanifest')
+console.log('GET /manifest.webmanifest ->', manifestRes.status, manifestRes.type)
+if (manifestRes.status !== 200) ok = false
+try {
+  const manifest = JSON.parse(manifestRes.body)
+  if (!manifest.name || !Array.isArray(manifest.icons) || manifest.icons.length === 0) {
+    console.log('  manifest -> name/icons inválidos')
+    ok = false
+  } else {
+    for (const icon of manifest.icons) {
+      const ir = await get(icon.src)
+      console.log('  icon', icon.src, '->', ir.status, ir.type)
+      if (ir.status !== 200) ok = false
+    }
+  }
+} catch {
+  console.log('  manifest -> JSON inválido')
+  ok = false
+}
+const swRes = await get('/sw.js')
+console.log('GET /sw.js ->', swRes.status, swRes.type)
+if (swRes.status !== 200) ok = false
+
+const swDevRes = await get('/sw-dev.js')
+console.log('GET /sw-dev.js ->', swDevRes.status, swDevRes.type)
+if (swDevRes.status !== 200) ok = false
+
 await server.close()
 console.log(ok ? 'SMOKE TEST: OK' : 'SMOKE TEST: FALLO')
 process.exit(ok ? 0 : 1)

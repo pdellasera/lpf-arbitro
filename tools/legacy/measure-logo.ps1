@@ -2,7 +2,7 @@
 # Mapa alpha + colores del logo.png (2006x784).
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
-$root = Split-Path -Parent $PSScriptRoot
+$root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $bmp = [System.Drawing.Bitmap]::FromFile((Join-Path $root 'assets\logo.png'))
 $W = $bmp.Width; $H = $bmp.Height
 Write-Output ("logo: {0}x{1}" -f $W,$H)

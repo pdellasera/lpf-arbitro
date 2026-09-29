@@ -1,8 +1,11 @@
 {
-  "name": "lpf-login-clone",
+  "name": "lpf-arbitro",
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

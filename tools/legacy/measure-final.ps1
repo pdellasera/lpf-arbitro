@@ -1,7 +1,7 @@
 # tools/measure-final.ps1
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
-$root = Split-Path -Parent $PSScriptRoot
+$root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $bmp = [System.Drawing.Bitmap]::FromFile((Join-Path $root 'assets\login_screem.png'))
 function Hex([int]$r,[int]$g,[int]$b){ '{0:X2}{1:X2}{2:X2}' -f $r,$g,$b }
 function HLine([int]$y,[int]$x0,[int]$x1,[int]$step) {

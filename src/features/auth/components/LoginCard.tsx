@@ -9,6 +9,7 @@ import { VersionTag } from '@/components/ui/VersionTag'
 import { RememberRow } from './RememberRow'
 import { useLogin } from '../hooks/useLogin'
 import { useAppVersion } from '../hooks/useAppVersion'
+import { useSession } from '../SessionProvider'
 
 interface FieldErrors {
   email?: string
@@ -16,14 +17,15 @@ interface FieldErrors {
 }
 
 export function LoginCard() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('arbitro@lpf.com')
+  const [password, setPassword] = useState('123456')
   const [remember, setRemember] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
 
   const login = useLogin()
   const version = useAppVersion()
+  const { signIn } = useSession()
 
   function validate(): boolean {
     const next: FieldErrors = {}
@@ -45,9 +47,8 @@ export function LoginCard() {
           setErrors({
             email: error instanceof Error ? error.message : 'No se pudo iniciar sesión',
           }),
-        onSuccess: () => {
-          // TODO: persistir token y navegar al panel del árbitro
-          console.info('Login exitoso')
+        onSuccess: (result) => {
+          signIn(result, remember)
         },
       },
     )
@@ -64,6 +65,13 @@ export function LoginCard() {
     >
       <div className="mb-6">
         <h2 className="text-[20px] font-bold leading-tight text-white md:text-[22px]">Iniciar sesión</h2>
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+        <span className="text-[11px] text-white/50">Cuenta demo</span>
+        <span className="ml-1 text-[12px] font-semibold text-white">arbitro@lpf.com</span>
+        <span className="text-white/30">·</span>
+        <span className="text-[12px] font-semibold text-white">123456</span>
       </div>
 
       <div className="flex flex-col gap-4 md:gap-5">
@@ -112,7 +120,7 @@ export function LoginCard() {
       </div>
 
       <div className="mt-6">
-        <PrimaryButton loading={login.isPending} disabled={login.isPending}>
+        <PrimaryButton type="submit" loading={login.isPending} disabled={login.isPending}>
           Iniciar sesión
         </PrimaryButton>
       </div>

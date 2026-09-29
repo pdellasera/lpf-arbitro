@@ -1,6 +1,8 @@
-# LPF — Login (clon fiel)
+# LPF Árbitro — Informe digital del árbitro (PWA)
 
-Clon del login de la app **LPF** (Liga Panameña de Fútbol) construido con
+PWA instalable de la **Liga Panameña de Fútbol** para el informe digital del árbitro:
+login, listado de partidos del día (**Home**) e informe en vivo con tablero de cancha
+y registro de eventos (**Partido en vivo**). Construida con
 **React 19 + Vite + TypeScript + TailwindCSS v4 + framer-motion + React Query + lucide-react**.
 
 La UI se reconstruyó a partir de análisis de píxeles de los assets del mockup
@@ -22,6 +24,44 @@ npm run build      # compila (tsc + vite)
 npm run preview    # sirve el build de producción
 ```
 
+## Deploy (Vercel)
+
+La app está lista para desplegar en Vercel como sitio estático (preset **Vite**):
+
+- **Repositorio:** https://github.com/pdellasera/lpf-arbitro.git
+- **Build command:** `npm run build` (ejecuta `tsc --noEmit` + `vite build`)
+- **Output directory:** `dist`
+- **Production branch:** `main`
+- **Framework preset:** Vite (se autodetecta; `vercel.json` lo fija explícitamente)
+- **Node.js Version:** 22.x (Settings → Node.js Version)
+
+Configuración de caché en `vercel.json`: `/sw.js` y `/manifest.webmanifest` se sirven con
+`Cache-Control: public, max-age=0, must-revalidate` (para que el service worker y el manifest
+se actualicen al instante), `/assets/*` con `immutable` (los archivos de Vite llevan hash)
+y `/icons/*` con caché de 7 días.
+
+Variables de entorno (opcionales):
+
+| Variable | Valor | Efecto |
+|---|---|---|
+| `VITE_API_URL` | (vacío) | Usa el mock local de login/partidos. Poné la URL del backend real para activarlo. |
+| `VITE_PWA_NO_DEV_SW` | `1` | Solo relevante en desarrollo (`vite dev`), no en producción. |
+
+> ⚠️ **Gotchas:** no definas `NODE_ENV=production` como variable de entorno (npm omitiría
+> `devDependencies` y el build fallaría por falta de `tsc`/`vite`), y no fuerces
+> `installCommand: "npm ci"` (el default `npm install` es más robusto).
+
+Verificación tras el deploy:
+
+```bash
+curl -sI https://<proyecto>.vercel.app/sw.js                 # Cache-Control: must-revalidate
+curl -sI https://<proyecto>.vercel.app/manifest.webmanifest   # application/manifest+json
+curl -sI https://<proyecto>.vercel.app/assets/index-*.js      # immutable
+```
+
+En Android, abrí la URL y confirmá que aparece **"Instalar ahora"**; `?pwa=debug` muestra
+el estado del service worker, el manifest y el evento `beforeinstallprompt`.
+
 ## Plataformas soportadas
 
 La app está pensada **solo para móvil y tablet**. En pantallas grandes (≥1024px con
@@ -34,23 +74,136 @@ puntero fino — escritorio/portátil con ratón) el login se oculta y se muestr
 
 Los tablets táctiles (incluido iPad en horizontal) **siempre** ven el login.
 
+## PWA — instalación antes de usar
+
+La app es instalable (PWA). Al abrir el **Login** se muestra un **modal** de instalación:
+
+> *Para que el sistema funcione correctamente es necesario instalar la aplicación.*
+
+- **Android / Chrome / Edge** (evento `beforeinstallprompt` disponible): el modal muestra
+  el botón **"Instalar ahora"**, que abre el instalador nativo del sistema.
+- En Android, si el prompt nativo aún no está listo, el botón reintenta al pulsarlo y, si
+  sigue sin estar disponible, explica el motivo (contexto no seguro, service worker ausente
+  o navegador sin soporte) y muestra los pasos manuales.
+- **iOS / iPadOS Safari** (y navegadores sin `beforeinstallprompt`): el modal muestra los
+  **pasos manuales** (Compartir → "Añadir a pantalla de inicio" → Añadir).
+- **"Más tarde"** (o X / Escape / clic fuera) cierra el modal y deja el Login usable.
+  El recordatorio **no se recuerda**: el modal vuelve a aparecer en cada apertura hasta
+  que la app esté instalada.
+- Una vez instalada (`display-mode: standalone` o evento `appinstalled`) el modal no
+  vuelve a mostrarse.
+
+### Cómo funciona
+
+| Pieza | Ubicación |
+|---|---|
+| Manifest | `public/manifest.webmanifest` (`display: standalone`, `orientation: any`, `#04121f`) |
+| Service worker | `public/sw.js` (network-first para navegación, cache-first para assets/fuentes, sin cachear `/api`) |
+| Iconos | `public/icons/*` (generados con `tools/prepare-pwa-icons.ps1`) |
+| Registro del SW | `src/features/pwa/lib/registerServiceWorker.ts` (`/sw.js` en producción, `/sw-dev.js` en desarrollo) |
+| SW de desarrollo | `public/sw-dev.js` (passthrough, sin caché; solo para probar la instalación en `vite dev`) |
+| Detección / estado | `src/features/pwa/{lib/installState.ts, hooks/usePwaInstall.ts}` |
+| Modal + instrucciones | `src/features/pwa/components/{InstallModal, InstallInstructions}.tsx` |
+
+### Requisitos para probar la instalación
+
+- El service worker y `beforeinstallprompt` exigen **HTTPS o `localhost`**.
+- En producción se registra `sw.js`; en desarrollo se registra `sw-dev.js` (passthrough,
+  sin caché) para poder probar el instalador en `localhost:5173` sin romper HMR.
+  `VITE_PWA_NO_DEV_SW=1` desactiva el SW de desarrollo si necesitas el comportamiento antiguo.
+- `beforeinstallprompt` es **solo de Chromium** (Chrome/Edge). Safari y Firefox nunca lo
+  disparan → se muestran instrucciones manuales.
+- Inspección en Chrome: DevTools → Application → Manifest / Service Workers.
+
+#### ¿Por qué NO instala desde la IP de la LAN?
+
+`http://192.168.x.x` **no es un contexto seguro** para Chrome: `isSecureContext` es `false`,
+`navigator.serviceWorker` ni siquiera existe y `beforeinstallprompt` queda bloqueado (Chrome
+tampoco puede generar el WebAPK de un origen inseguro). **Ningún cambio de código lo arregla.**
+
+Para probar la instalación desde el móvil usa una de estas vías:
+
+| Vía | URL en el móvil | ¿Requiere código? |
+|---|---|---|
+| Port forwarding USB (`chrome://inspect`) | `http://localhost:5173` o `:4173` | no |
+| Túnel HTTPS al preview | `https://…trycloudflare.com` (cloudflared) | no |
+| Túnel HTTPS al dev | `https://…trycloudflare.com` → `localhost:5173` | SW de dev (incluido) |
+| Flag de origen inseguro en el móvil | `http://192.168.x.x:5173` + `#unsafely-treat-insecure-origin-as-secure` | SW de dev (incluido) |
+
+#### Diagnóstico sin DevTools: `?pwa=debug`
+
+Añade `?pwa=debug` a la URL (en dev o en producción) y verás un panel con `origin`,
+`isSecureContext`, estado del service worker, manifest, plataforma y si `beforeinstallprompt`
+llegó (y cuándo). Es la forma más rápida de saber cuál de los requisitos te está frenando.
+
+En `vite dev` (o con `?pwa=debug`) también aparece en el login el botón
+**"Debug · Borrar caché y reinstalar"**: desregistra el service worker, vacía las cachés y
+limpia `localStorage`/`sessionStorage` (incluida la bandera `lpf-pwa-installed`) y recarga,
+para desbloquear la instalación desde cero.
+
+#### Probar el instalador nativo en un Android real
+
+1. `npm run build && npm run preview` (deja el build servido en `http://localhost:4173`).
+2. En el PC abre `chrome://inspect/#devices` → **Port forwarding** → añade `4173` →
+   `localhost:4173` y conecta el móvil por USB (con depuración USB activada).
+3. En el móvil abre `http://localhost:4173`. Al ser `localhost`, es contexto seguro: el
+   service worker se registra y Chrome emite `beforeinstallprompt` → el modal muestra
+   **"Instalar ahora"** y abre el instalador nativo.
+
+> ⚠️ No uses `npm run preview --host` con la IP de la red local
+> (`http://192.168.x.x:4173`): **no** es contexto seguro y el instalador no aparecerá.
+> Como alternativa al USB sirve un túnel HTTPS
+> (`npx cloudflared tunnel --url http://localhost:4173`).
+
+#### Si el botón no abre el instalador
+
+- **Cooldown de Chrome**: si ya descartaste el prompt nativo antes, Chrome deja de emitir
+  `beforeinstallprompt` una temporada. Borra los datos del origen (Ajustes → Configuración
+  de sitios) y activa `chrome://flags/#bypass-app-banner-engagement-checks`. Evita el modo
+  incógnito (nunca emite el evento).
+- **Origen no seguro** (IP de LAN): ver la sección anterior; usa port forwarding o túnel HTTPS.
+- **Sin service worker activo**: en producción usa `npm run preview`; en desarrollo confirma
+  con `?pwa=debug` que `sw-dev.js` está `active`.
+- **Firefox Android**: no emite `beforeinstallprompt` → instrucciones manuales (menú ⋮).
+
+Para regenerar los iconos tras cambiar el logo:
+
+```bash
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\prepare-pwa-icons.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\verify-pwa.ps1
+```
+
 ## Estructura
 
 ```
 src/
 ├─ assets/                      login_background.webp, shield.webp (generados)
+│  ├─ crests/                    escudos de los clubes (cai, tauro, umecit, ...)
+│  ├─ live/                      crowd-top, crowd-side (fondo del partido en vivo)
+│  └─ players/                   p1..p4 (avatares de jugadores)
 ├─ components/ui/               TextField, PrimaryButton, SecondaryButton,
-│                               Toggle, Divider, LpfLogo, VersionTag
+│                               Toggle, Divider, LpfLogo, VersionTag,
+│                               Crest, IconButton, PlayerAvatar
 ├─ features/auth/
 │  ├─ api/authApi.ts            login() + fetchAppVersion() (mock + real via VITE_API_URL)
 │  ├─ hooks/                    useLogin, useAppVersion (React Query)
 │  ├─ components/               LoginScreen, AuthHeader, LoginCard, RememberRow,
 │  │                            DesktopNotice (aviso de escritorio)
+│  ├─ session.ts / SessionProvider.tsx   estado de sesión (localStorage)
 │  └─ types.ts
+├─ features/matches/            HomeScreen, MatchCard, BottomNav, DaySelector,
+│                               useMatches, mockMatches (listado del día)
+├─ features/match-control/      LiveMatchScreen, PitchBoard, MatchTimeline,
+│                               EventDrawer, useLiveMatchState (informe en vivo)
+├─ features/pwa/                registerServiceWorker, installState, usePwaInstall,
+│                               InstallModal, InstallInstructions, PwaDebugPanel
 ├─ lib/                         queryClient.ts, cn.ts
 └─ index.css                    tokens Tailwind v4 (@theme)
-tools/                          prepare-assets.ps1, measure-*.ps1 (análisis),
-                                smoke-test.mjs, verify-css.ps1, extract-css.ps1
+tools/                          Generadores: prepare-assets.ps1, prepare-pwa-icons.ps1,
+                                prepare-crests.ps1, prepare-live-assets.ps1
+                                Verificación: smoke-test.mjs, verify-pwa.ps1,
+                                verify-css.ps1, verify-live-css.ps1
+tools/legacy/                   measure-*.ps1, read-*.ps1, ocr-home.ps1 (análisis del mockup)
 ```
 
 ## Paleta (medida del mockup)
@@ -80,8 +233,9 @@ Para conectar un backend real, define `VITE_API_URL` (ver `.env.example`).
 - La tipografía usada es **Inter** (no se pudo identificar la fuente exacta del mockup).
 - Los textos del formulario se asumen a partir del contexto (ver abajo). Si difieren del
   mockup real, se cambian en `LoginCard.tsx` / `AuthHeader.tsx`.
-- `tools/measure-*.ps1` son scripts de análisis por píxeles usados para extraer las medidas;
-  no forman parte de la app.
+- `tools/legacy/measure-*.ps1` (y `read-*.ps1`, `ocr-home.ps1`) son scripts de análisis por
+  píxeles usados para extraer las medidas del mockup; no forman parte de la app y se
+  conservan solo como referencia.
 - Comportamiento móvil: `100dvh` (altura dinámica), safe areas (`env(safe-area-inset-*)`),
   `overscroll-behavior: none`, `touch-action: manipulation`, inputs ≥16px (evita el zoom de
   iOS al enfocar) y `interactive-widget=resizes-content` (el teclado no tapa el botón).
