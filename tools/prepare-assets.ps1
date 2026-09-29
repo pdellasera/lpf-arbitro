@@ -23,18 +23,8 @@ if ($LASTEXITCODE -ne 0) { throw "ffmpeg preview bg falló" }
 & $ffmpeg -hide_banner -loglevel error -y -i "$root\assets\login_background.png" -c:v libwebp -quality 82 -compression_level 6 "$srcAssets\login_background.webp"
 if ($LASTEXITCODE -ne 0) { throw "ffmpeg bg webp falló" }
 # Escudo (solo el shield, recortado del lockup): bbox shield ~ x158-800, y58-740
-& $ffmpeg -hide_banner -loglevel error -y -i "$root\assets\logo.png" -vf "crop=645:685:155:55" -c:v png -compression_level 6 "$srcAssets\shield.png"
-if ($LASTEXITCODE -ne 0) { throw "ffmpeg shield png falló" }
-
-# Verificación del recorte del escudo (bbox contenido):
-Add-Type -AssemblyName System.Drawing
-$s = [System.Drawing.Bitmap]::FromFile((Join-Path $srcAssets 'shield.png'))
-$minX=$s.Width;$maxX=0;$minY=$s.Height;$maxY=0
-for($y=0;$y -lt $s.Height;$y+=2){ for($x=0;$x -lt $s.Width;$x+=2){
-  if($s.GetPixel($x,$y).A -gt 10){ if($x-lt$minX){$minX=$x}; if($x-gt$maxX){$maxX=$x}; if($y-lt$minY){$minY=$y}; if($y-gt$maxY){$maxY=$y} }
-}}
-Write-Host ("shield.png {0}x{1}  contenido: x {2}..{3} y {4}..{5}" -f $s.Width,$s.Height,$minX,$maxX,$minY,$maxY)
-$s.Dispose()
+& $ffmpeg -hide_banner -loglevel error -y -i "$root\assets\logo.png" -vf "crop=645:685:155:55" -c:v libwebp -lossless 1 "$srcAssets\shield.webp"
+if ($LASTEXITCODE -ne 0) { throw "ffmpeg shield webp falló" }
 
 Write-Host '=== src/assets ==='
 Get-ChildItem $srcAssets | Select-Object Name, Length | Format-Table -AutoSize
