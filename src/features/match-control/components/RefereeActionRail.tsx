@@ -37,29 +37,37 @@ interface RefereeActionRailProps {
 export function RefereeActionRail({ active, onSelect, header }: RefereeActionRailProps) {
   return (
     <div
-      className="flex shrink-0 flex-col rounded-xl bg-[#0f2135]/50"
-      style={{ width: 'clamp(72px, 9.5vw, 150px)' }}
+      data-rail
+      className="flex w-[clamp(84px,9vw,132px)] shrink-0 flex-col rounded-xl bg-[#0f2135]/50 short:w-[clamp(104px,15vw,140px)]"
     >
       {header && <div className="shrink-0 p-1.5 pb-0">{header}</div>}
 
-      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-1.5">
+      {/* Grid sin scroll: 1 columna en pantallas altas, 2 columnas en pantallas bajas.
+          gridAutoRows:1fr reparte el alto sobrante por igual para que quepan las 8. */}
+      <div className="grid flex-1 grid-cols-1 gap-1.5 p-1.5 short:grid-cols-2" style={{ gridAutoRows: '1fr' }}>
         {RAIL_ORDER.map((id) => {
           const isActive = id === active
-          const label = id === 'corner' ? 'Tiro de\nesquina' : ACTIONS[id].label
           return (
             <button
               key={id}
               type="button"
+              data-action={id}
               onClick={() => onSelect(id)}
+              title={ACTIONS[id].label}
+              aria-label={ACTIONS[id].label}
               className={cn(
-                'flex shrink-0 items-center gap-2 rounded-xl px-2 text-left transition-colors',
+                'flex min-h-[40px] items-center gap-2 rounded-xl px-2 text-left transition-colors short:flex-col short:items-center short:justify-center short:gap-1 short:px-1',
                 isActive ? 'bg-[#0060fd]' : 'bg-[#0f2135]/75 hover:bg-[#0f2135]',
               )}
-              style={{ height: 'clamp(48px, 8.4dvh, 68px)' }}
             >
               <RailGlyph id={id} active={isActive} />
-              <span className={cn('text-[11px] font-semibold leading-tight', isActive ? 'text-white' : 'text-white/95')}>
-                {label}
+              <span
+                className={cn(
+                  'text-[11px] font-semibold leading-tight short:text-center short:text-[9px] short:leading-[1.1]',
+                  isActive ? 'text-white' : 'text-white/95',
+                )}
+              >
+                {ACTIONS[id].label}
               </span>
             </button>
           )

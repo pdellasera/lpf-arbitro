@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Variante para pantallas "bajas" (móvil en horizontal): dispara a ≤560px de alto. */
+@custom-variant short (@media (max-height: 560px));
+
 @theme {
   --color-brand: #0062fd;
   --color-brand-hover: #1a74ff;
@@ -76,4 +79,27 @@ body {
 }
 .no-scrollbar::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* --- Control de partido en vivo ------------------------------------ */
+
+/* Escenario del campo: contenedor de consulta (size) para poder usar cqw/cqh
+   y encajar el rectángulo de césped 976x560 sin distorsión. */
+.pitch-stage {
+  container-type: size;
+}
+
+/* Caja del campo: contenedor de consulta (inline-size) para escalar los
+   marcadores de jugador con el ancho real del césped (cqw) y ocultar sus
+   etiquetas cuando el campo se queda corto. */
+.pitch-box {
+  container-type: inline-size;
+}
+
+/* En campos < 760px de ancho solo se mantiene visible la etiqueta del
+   jugador seleccionado; el resto pasa a "solo número" para no tapar la cancha. */
+@container (max-width: 760px) {
+  .player-label[data-selected='false'] {
+    display: none;
+  }
 }

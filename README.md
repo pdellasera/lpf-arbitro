@@ -239,3 +239,34 @@ Para conectar un backend real, define `VITE_API_URL` (ver `.env.example`).
 - Comportamiento móvil: `100dvh` (altura dinámica), safe areas (`env(safe-area-inset-*)`),
   `overscroll-behavior: none`, `touch-action: manipulation`, inputs ≥16px (evita el zoom de
   iOS al enfocar) y `interactive-widget=resizes-content` (el teclado no tapa el botón).
+
+## Partido en vivo — layout sin distorsión
+
+El tablero de cancha (`PitchBoard.tsx`) conserva la relación de aspecto del diseño
+**976×560** (césped 950×560 + portería de 26px). La caja del campo se dimensiona con:
+
+```css
+aspect-ratio: 976 / 560;
+width: min(92cqw, calc(90cqh * 1.742857));
+```
+
+sobre un contenedor `container-type: size` (`.pitch-stage`), de modo que el SVG de marcas
+(`viewBox="-26 0 976 560"`) se estira 1:1 y **no se deforma** en ningún viewport (el
+`90cqh` es el "aire" reservado a la tribuna; súbelo/bájalo para más/menos margen).
+
+- **Variante `short`** (`@media (max-height: 560px)`, declarada con `@custom-variant` en
+  `index.css`): en móvil horizontal el rail pasa a **2 columnas × 4 filas** con botones
+  "icono + etiqueta diminuta", para que las 8 acciones + los botones de fase quepan sin
+  scroll; en tablet/PC el rail es de **1 columna** con etiqueta al lado.
+- **Etiquetas de jugador**: se escalan con `cqw` (ancho real del campo) y se ocultan —salvo
+  la del jugador seleccionado— cuando el campo mide <760px, vía
+  `@container (max-width: 760px)` y `data-selected`. Así los nombres no tapan la cancha en
+  el móvil.
+- **Marcadores** (`PlayerMarker.tsx`): el punto/número usa `clamp(20px, 2.9cqw, 28px)` y la
+  etiqueta `clamp(9px, 1.15cqw, 11px)`, de modo que todo escala con el campo.
+
+Verificación: `tools/verify-live-css.ps1` audita los tokens de layout en `src` y en el CSS
+compilado (`dist`). `tools/layout-check.mjs` abre el partido en Chrome headless a
+800×360 / 1024×768 / 1366×768 / 1524×820, valida el AR y que las 8 acciones caben en el
+rail, y guarda capturas en `tools/shots/` (requiere Chrome y
+`node --experimental-websocket`).

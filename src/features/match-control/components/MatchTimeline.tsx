@@ -88,12 +88,12 @@ export function MatchTimeline({ match, minute, running, onTogglePlay }: MatchTim
         className={`absolute left-3 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-full border-2 border-[#0076f4] text-[#0076f4] transition-opacity ${
           canToggle ? '' : 'opacity-40'
         }`}
-        style={{ width: 'clamp(40px, 6.6dvh, 54px)', height: 'clamp(40px, 6.6dvh, 54px)' }}
+        style={{ width: 'clamp(36px, 6.2dvh, 48px)', height: 'clamp(36px, 6.2dvh, 48px)' }}
       >
         {running ? (
-          <Pause className="h-[clamp(16px,2.4dvh,22px)] w-[clamp(16px,2.4dvh,22px)]" />
+          <Pause className="h-[clamp(14px,2.2dvh,20px)] w-[clamp(14px,2.2dvh,20px)]" />
         ) : (
-          <Play className="h-[clamp(16px,2.4dvh,22px)] w-[clamp(16px,2.4dvh,22px)]" fill="currentColor" />
+          <Play className="h-[clamp(14px,2.2dvh,20px)] w-[clamp(14px,2.2dvh,20px)]" fill="currentColor" />
         )}
       </button>
 

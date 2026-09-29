@@ -28,12 +28,19 @@ export function PlayerMarker({ player, selected, onSelect }: PlayerMarkerProps) 
     <button
       type="button"
       onClick={() => onSelect?.(player.id)}
-      className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center outline-none"
-      style={{ left: `${xPct}%`, top: `${yPct}%` }}
+      aria-label={`${player.name} · ${player.number}`}
+      className="absolute -translate-x-1/2 -translate-y-1/2 outline-none"
+      style={{
+        left: `${xPct}%`,
+        top: `${yPct}%`,
+        width: 'clamp(20px, 2.9cqw, 28px)',
+        height: 'clamp(20px, 2.9cqw, 28px)',
+      }}
     >
       <span
-        className="flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-bold ring-1 ring-white/25"
+        className="flex h-full w-full items-center justify-center rounded-full font-bold ring-1 ring-white/25"
         style={{
+          fontSize: 'clamp(11px, 1.45cqw, 13px)',
           background: selected ? '#ffffff' : bg,
           color: selected ? '#0d2031' : '#ffffff',
           boxShadow: selected ? '0 0 0 3px #0062fd' : undefined,
@@ -41,7 +48,11 @@ export function PlayerMarker({ player, selected, onSelect }: PlayerMarkerProps) 
       >
         {player.number}
       </span>
-      <span className="mt-0.5 flex items-center gap-1 whitespace-nowrap rounded-md bg-black/55 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
+      <span
+        data-selected={selected ? 'true' : 'false'}
+        className="player-label absolute left-1/2 top-full mt-0.5 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-md bg-black/55 px-1.5 py-0.5 font-semibold leading-none text-white"
+        style={{ fontSize: 'clamp(9px, 1.15cqw, 11px)' }}
+      >
         {player.name}
         {player.hasBall && <Volleyball className="h-3 w-3 text-white" />}
       </span>

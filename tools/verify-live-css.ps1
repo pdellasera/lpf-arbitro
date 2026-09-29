@@ -25,6 +25,42 @@ foreach ($t in $tokens) {
 }
 
 Write-Output ''
+Write-Output '=== Tokens de layout del campo (src) ==='
+$layoutTokens = @(
+  @('AR campo 976/560',      '976 / 560'),
+  @('ancho min(92cqw...)',   '92cqw'),
+  @('alto disponible 90cqh', '90cqh'),
+  @('factor AR 976/560',     '1.742857'),
+  @('marcador escala cqw',   '2.9cqw'),
+  @('variante short',        '@custom-variant short'),
+  @('contenedor size',       'container-type: size'),
+  @('contenedor inline-size','container-type: inline-size'),
+  @('query etiqueta',        '@container (max-width: 760px)'),
+  @('data-selected',         'data-selected')
+)
+foreach ($t in $layoutTokens) {
+  $name = $t[0]; $needle = $t[1]
+  Write-Output ('  {0,-24} {1}' -f $name, ($(if ($css -match [regex]::Escape($needle)) { 'OK' } else { 'FALTA' })))
+}
+
+Write-Output ''
+Write-Output '=== CSS compilado (dist) ==='
+$distCssFile = (Get-ChildItem (Join-Path $root 'dist\assets') -Filter '*.css' -File | Select-Object -First 1).FullName
+$distCss = Get-Content -Raw $distCssFile
+$distTokens = @(
+  @('variante short compilada',    '@media (height<=560px)'),
+  @('rail 2 columnas',             'grid-cols-2'),
+  @('container-type size',         'container-type:size'),
+  @('container-type inline-size',  'container-type:inline-size'),
+  @('query etiqueta compilada',    '@container (width<=760px)'),
+  @('clase player-label',          'player-label')
+)
+foreach ($t in $distTokens) {
+  $name = $t[0]; $needle = $t[1]
+  Write-Output ('  {0,-28} {1}' -f $name, ($(if ($distCss.Contains($needle)) { 'OK' } else { 'FALTA' })))
+}
+
+Write-Output ''
 Write-Output '=== Ficheros del feature match-control ==='
 Get-ChildItem (Join-Path $root 'src\features\match-control') -Recurse -File |
   ForEach-Object { Write-Output ('  ' + $_.FullName.Substring($root.Length + 1)) }
