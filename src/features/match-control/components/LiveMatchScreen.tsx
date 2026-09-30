@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import type { Match } from '@/features/matches/types'
 import { ACTIONS, type ActionKind } from '../data/actionConfig'
 import { createLiveMatch } from '../data/mockLiveMatch'
 import { useLiveMatchState } from '../hooks/useLiveMatchState'
 import { useOrientation } from '../hooks/useOrientation'
+import { getBookings } from '../lib/bookings'
 import type { EventDraft } from '../types'
 import { EventDrawer } from './event/EventDrawer'
 import { MatchPhaseControl } from './MatchPhaseControl'
@@ -12,6 +13,7 @@ import { MatchTimeline } from './MatchTimeline'
 import { OrientationGate } from './OrientationGate'
 import { PeriodsDialog } from './PeriodsDialog'
 import { PitchBoard } from './PitchBoard'
+import { PlayerCard } from './PlayerCard'
 import { PlayerMarker } from './PlayerMarker'
 import { RefereeActionRail } from './RefereeActionRail'
 import { ScoreboardBar } from './ScoreboardBar'
@@ -41,16 +43,25 @@ export function LiveMatchScreen({ match, onBack }: LiveMatchScreenProps) {
   const [activeAction, setActiveAction] = useState<ActionKind>('goal')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
+  const [cardPlayerId, setCardPlayerId] = useState<string | null>(null)
   const [registryOpen, setRegistryOpen] = useState(false)
   const [railOpen, setRailOpen] = useState(false)
 
   const minute = Math.floor(seconds / 60)
   const config = ACTIONS[activeAction]
+  const bookings = useMemo(() => getBookings(live.events), [live.events])
+  const cardPlayer = cardPlayerId ? live.players.find((p) => p.id === cardPlayerId) : null
 
   function handleSelectAction(id: ActionKind) {
     setActiveAction(id)
     setRailOpen(false)
     setDrawerOpen(true)
+    setCardPlayerId(null)
+  }
+
+  function handleMarkerSelect(id: string) {
+    setSelectedPlayerId(id)
+    setCardPlayerId((prev) => (prev === id ? null : id))
   }
 
   function handleSubmit(draft: EventDraft) {
@@ -83,14 +94,31 @@ export function LiveMatchScreen({ match, onBack }: LiveMatchScreenProps) {
         <>
           {/* Capa 0/1: escenario a sangre (cancha + gradas + césped a pantalla completa) */}
           <PitchBoard>
+            <div
+              className="absolute inset-0"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setCardPlayerId(null)
+              }}
+            />
             {live.players.map((p) => (
               <PlayerMarker
                 key={p.id}
                 player={p}
                 selected={p.id === selectedPlayerId}
-                onSelect={setSelectedPlayerId}
+                expanded={p.id === cardPlayerId}
+                cards={bookings.get(p.id)}
+                onSelect={handleMarkerSelect}
               />
             ))}
+            {cardPlayer && (
+              <PlayerCard
+                player={cardPlayer}
+                teamName={cardPlayer.side === 'home' ? live.home.name : live.away.name}
+                crest={cardPlayer.side === 'home' ? live.home.crest : live.away.crest}
+                cards={bookings.get(cardPlayer.id)}
+                onQuickAction={handleSelectAction}
+              />
+            )}
           </PitchBoard>
 
           {/* Capa 2: barra superior flotante */}
@@ -148,6 +176,8 @@ export function LiveMatchScreen({ match, onBack }: LiveMatchScreenProps) {
             config={config}
             match={live}
             minute={minute}
+            selectedPlayerId={selectedPlayerId}
+            onSelectPlayer={setSelectedPlayerId}
             onClose={() => setDrawerOpen(false)}
             onSelectAction={handleSelectAction}
             onSubmit={handleSubmit}

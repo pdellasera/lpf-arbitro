@@ -18,7 +18,7 @@ export function ChoiceChips({ options, value, onSelect }: ChoiceChipsProps) {
             type="button"
             onClick={() => onSelect(o.id)}
             className={cn(
-              'h-10 rounded-lg px-3.5 text-sm font-semibold transition-colors',
+              'h-10 rounded-lg px-3.5 text-sm font-semibold transition-colors short:h-9 short:px-3 short:text-[13px]',
               active
                 ? 'bg-[#0060fd] text-white'
                 : 'border border-[#2f3744] bg-[#061625] text-[#a3b1c1] hover:border-white/30',

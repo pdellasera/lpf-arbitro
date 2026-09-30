@@ -28,7 +28,7 @@ export function SideSelector({ value, onSelect, neutral }: SideSelectorProps) {
             key={o.id}
             type="button"
             onClick={() => onSelect(o.id)}
-            className={cn('h-10 flex-1 rounded-lg text-center text-sm font-semibold transition-colors')}
+            className={cn('h-10 flex-1 rounded-lg text-center text-sm font-semibold transition-colors short:h-9 short:text-[13px]')}
             style={{
               background: active ? '#0060fd' : 'transparent',
               color: active ? '#ffffff' : '#8d9aa5',

@@ -37,6 +37,8 @@ export interface ActionConfig {
   secondLabel?: string
   optionsLabel?: string
   options?: ChoiceOption[]
+  /** Mapea una opción elegida a su `EventKind` real (p.ej. tarjeta roja ≠ amarilla). */
+  optionKinds?: Record<string, EventKind>
   showAssist?: boolean
   showNote?: boolean
   noteLabel?: string
@@ -76,6 +78,7 @@ export const ACTIONS: Record<ActionKind, ActionConfig> = {
       { id: 'yellow', label: 'Amarilla', tone: 'yellow' },
       { id: 'red', label: 'Roja', tone: 'red' },
     ],
+    optionKinds: { yellow: 'yellow', red: 'red' },
   },
   sub: {
     id: 'sub',

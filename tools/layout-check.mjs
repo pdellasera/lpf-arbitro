@@ -252,6 +252,34 @@ try {
     ok(info.trigger != null && info.trigger.w <= 64 && info.trigger.h <= 64, 'trigger compacto', info.trigger ? `${info.trigger.w}x${info.trigger.h}px` : 'sin trigger')
     ok(info.centerInBox, 'centro de la cancha despejado', 'elementFromPoint dentro de .pitch-box')
 
+    // Barra de marcador: orden `nombre·escudo·marcador` (local) / espejado (visitante) + cronómetro centrado.
+    const score = await evaluate(`(() => {
+      const bar = document.querySelector('[data-scoreboard]')
+      if (!bar) return null
+      const b = bar.getBoundingClientRect()
+      const clock = document.querySelector('[data-clock]')
+      const c = clock ? clock.getBoundingClientRect() : null
+      const home = document.querySelector('[data-score="home"]')
+      const away = document.querySelector('[data-score="away"]')
+      const order = (block, scoreEl) =>
+        block ? [...block.children].map((n) => (n === scoreEl ? 'score' : n.tagName === 'IMG' ? 'crest' : n.tagName === 'P' ? 'name' : 'other')).join(',') : null
+      return {
+        w: Math.round(b.width),
+        homeOrder: order(home?.parentElement ?? null, home),
+        awayOrder: order(away?.parentElement ?? null, away),
+        clockCentered: c != null && Math.abs(c.left + c.width / 2 - (b.left + b.width / 2)) < 2,
+        homeW: home ? Math.round(home.getBoundingClientRect().width) : 0,
+        awayW: away ? Math.round(away.getBoundingClientRect().width) : 0,
+      }
+    })()`)
+    ok(score != null, 'barra de marcador presente')
+    if (score) {
+      ok(score.homeOrder === 'name,crest,score', 'orden local: nombre·escudo·marcador', score.homeOrder ?? '')
+      ok(score.awayOrder === 'score,crest,name', 'orden visitante: marcador·escudo·nombre', score.awayOrder ?? '')
+      ok(score.clockCentered, 'cronómetro centrado en la barra')
+      ok(score.homeW > 0 && score.awayW > 0, 'marcadores visibles sin recorte', `${score.homeW}x${score.awayW}`)
+    }
+
     const shotClosed = await send('Page.captureScreenshot', { format: 'png' })
     writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}.png`), Buffer.from(shotClosed.result.data, 'base64'))
     console.log(`  captura → tools/shots/${vp.name}.png`)
@@ -303,6 +331,80 @@ try {
       800,
     )
     ok(after, 'elegir acción cierra el panel y abre el drawer', after ? '' : 'no pasó a registrar gol')
+
+    // Los 11 titulares deben caber en la grilla sin scroll interno.
+    const drawer = await evaluate(`(() => {
+      const scroll = document.querySelector('[data-drawer-scroll]')
+      const cells = [...document.querySelectorAll('[data-drawer-cell]')]
+      const box = scroll ? scroll.getBoundingClientRect() : null
+      const inside = box
+        ? cells.every((c) => {
+            const r = c.getBoundingClientRect()
+            return r.top >= box.top - 1 && r.bottom <= box.bottom + 1 && r.left >= box.left - 1 && r.right <= box.right + 1
+          })
+        : false
+      return {
+        count: cells.length,
+        inside,
+        scrollable: scroll ? scroll.scrollHeight > scroll.clientHeight + 1 : null,
+        scrollH: scroll ? scroll.scrollHeight : null,
+        clientH: scroll ? scroll.clientHeight : null,
+      }
+    })()`)
+    ok(drawer.count === 11, '11 titulares en la grilla', `${drawer.count} celdas`)
+    ok(drawer.inside, 'las 11 celdas caben dentro del panel')
+    ok(drawer.scrollable === false, 'panel sin scroll (11/11 visibles)', `scrollH=${drawer.scrollH} clientH=${drawer.clientH}`)
+
+    // Seleccionar celda → queda marcada y sincroniza con la cancha.
+    await evaluate(`(() => { const c = document.querySelector('[data-drawer-cell][data-player-id="h11"]'); if (c) c.click() })()`)
+    const picked = await waitFor(
+      `document.querySelector('[data-drawer-cell][data-player-id="h11"]')?.getAttribute('aria-pressed') === 'true'`,
+      800,
+    )
+    ok(picked, 'celda seleccionada (aria-pressed) y sincronizada')
+
+    // Ficha del jugador al tocar un dorsal de la cancha.
+    await evaluate(`(() => { const x = document.querySelector('[data-drawer] button[aria-label="Cerrar"]'); if (x) x.click() })()`)
+    await waitFor(`document.querySelector('[data-drawer]') === null`, 800)
+    await evaluate(`(() => { const m = document.querySelector('button[aria-label^="R. Cedeño"]'); if (m) m.click() })()`)
+    const cardShown = await waitFor(`document.querySelector('[data-player-card]') !== null`, 800)
+    ok(cardShown, 'ficha del jugador aparece al tocar el dorsal')
+    const card = await evaluate(`(() => {
+      const el = document.querySelector('[data-player-card]')
+      const box = document.querySelector('.pitch-box')
+      if (!el || !box) return null
+      const r = el.getBoundingClientRect()
+      const b = box.getBoundingClientRect()
+      return {
+        name: el.querySelector('[data-card-name]')?.textContent ?? '',
+        pos: el.querySelector('[data-card-position]')?.textContent ?? '',
+        inside: r.left >= b.left - 1 && r.right <= b.right + 1 && r.top >= b.top - 1 && r.bottom <= b.bottom + 1,
+      }
+    })()`)
+    if (card) {
+      ok(card.name.length > 0 && card.pos.length > 0, 'ficha muestra nombre y posición', `${card.name} · ${card.pos}`)
+      ok(card.inside, 'ficha dentro de los límites de la cancha')
+    }
+
+    // Regresión de tarjeta: registrar "Roja" debe pintar booking rojo en el marcador.
+    await evaluate(`(() => { const t = document.querySelector('[data-rail-trigger]'); if (t) t.click() })()`)
+    await waitFor(`document.querySelector('[data-rail]') !== null`, 800)
+    await evaluate(`(() => { const b = document.querySelector('[data-rail] [data-action="card"]'); if (b) b.click() })()`)
+    await waitFor(`document.querySelector('aside[aria-label="Registrar tarjeta"]') !== null`, 800)
+    await evaluate(`(() => {
+      const cell = document.querySelector('[data-drawer-cell][data-player-id="h11"]'); if (cell) cell.click()
+      const red = [...document.querySelectorAll('[data-drawer] button')].find((b) => b.textContent === 'Roja'); if (red) red.click()
+      const save = [...document.querySelectorAll('[data-drawer] button')].find((b) => b.textContent === 'Guardar'); if (save) save.click()
+    })()`)
+    const booking = await waitFor(
+      `document.querySelector('button[aria-label^="R. Cedeño"] [data-booking="red"]') !== null`,
+      800,
+    )
+    ok(booking, 'tarjeta roja registrada → booking rojo en el marcador')
+
+    const shotCard = await send('Page.captureScreenshot', { format: 'png' })
+    writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}-card.png`), Buffer.from(shotCard.result.data, 'base64'))
+    console.log(`  captura → tools/shots/${vp.name}-card.png`)
   }
 } finally {
   chrome.kill()

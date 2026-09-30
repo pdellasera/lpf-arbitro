@@ -23,6 +23,7 @@ export function useLiveMatchState(initial: LiveMatch) {
         kind: draft.kind,
         side: draft.side,
         player: draft.player,
+        playerId: draft.playerId,
         label: draft.option ?? draft.note,
       }
       const score =

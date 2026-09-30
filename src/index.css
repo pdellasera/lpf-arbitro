@@ -91,6 +91,8 @@ body {
   --live-gap: 0.5rem;
   --live-sheet-w: clamp(300px, 62vw, 560px);
   --live-rail-trigger: clamp(46px, 7.6dvh, 58px);
+  --live-drawer-w: clamp(300px, 32vw, 440px);
+  --live-cell-h: clamp(46px, 7.4dvh, 60px);
 }
 
 /* Escenario del campo: contenedor de consulta (size) para poder usar cqw/cqh
@@ -118,5 +120,21 @@ body {
 @container (max-width: 760px) {
   .player-label[data-selected='false'] {
     display: none;
+  }
+}
+
+/* Panel de evento: flota a la derecha, entre header y timeline. En `short`
+   (≤560px de alto) ocupa toda la altura para dejar ver los 11 titulares. */
+.event-drawer {
+  right: max(var(--live-gap), env(safe-area-inset-right));
+  top: calc(var(--live-header-h) + max(var(--live-gap), env(safe-area-inset-top)) + var(--live-gap));
+  bottom: calc(var(--live-timeline-h) + max(var(--live-gap), env(safe-area-inset-bottom)) + var(--live-gap));
+  width: var(--live-drawer-w);
+}
+@media (max-height: 560px) {
+  .event-drawer {
+    top: max(var(--live-gap), env(safe-area-inset-top));
+    bottom: max(var(--live-gap), env(safe-area-inset-bottom));
+    width: min(70vw, 460px);
   }
 }

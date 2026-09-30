@@ -41,6 +41,8 @@ export interface TimelineEvent {
   kind: EventKind
   side: Side | 'neutral'
   player?: string
+  /** Id del jugador implicado (para flagear amonestados sobre la cancha). */
+  playerId?: string
   label?: string
 }
 

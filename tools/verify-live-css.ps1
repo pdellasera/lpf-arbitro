@@ -45,7 +45,20 @@ $layoutTokens = @(
   @('contenedor size',       'container-type: size'),
   @('contenedor inline-size','container-type: inline-size'),
   @('query etiqueta',        '@container (max-width: 760px)'),
-  @('data-selected',         'data-selected')
+  @('data-selected',         'data-selected'),
+  @('token drawer width',    '--live-drawer-w'),
+  @('token cell height',     '--live-cell-h'),
+  @('grilla 3 col',          'grid-cols-3'),
+  @('grilla 4 col short',    'short:grid-cols-4'),
+  @('dos paneles short',     'short:flex-row'),
+  @('data-drawer',           'data-drawer'),
+  @('data-drawer-scroll',    'data-drawer-scroll'),
+  @('data-drawer-cell',      'data-drawer-cell'),
+  @('data-player-card',      'data-player-card'),
+  @('data-booking',          'data-booking'),
+  @('data-scoreboard',       'data-scoreboard'),
+  @('mapeo optionKinds',     'optionKinds'),
+  @('util getBookings',      'getBookings')
 )
 foreach ($t in $layoutTokens) {
   $name = $t[0]; $needle = $t[1]
@@ -71,7 +84,12 @@ $distTokens = @(
   @('tribuna band-y compilada',    '--band-y'),
   @('marco header compilado',      '--live-header-h'),
   @('marco timeline compilado',    '--live-timeline-h'),
-  @('aspect-ratio 976/560',        'aspect-ratio:976/560')
+  @('aspect-ratio 976/560',        'aspect-ratio:976/560'),
+  @('drawer width compilado',      '--live-drawer-w'),
+  @('cell height compilado',       '--live-cell-h'),
+  @('grilla 3 col compilada',      'grid-cols-3'),
+  @('clase event-drawer',          'event-drawer'),
+  @('drawer short 70vw',           '70vw')
 )
 foreach ($t in $distTokens) {
   $name = $t[0]; $needle = $t[1]

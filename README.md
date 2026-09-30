@@ -269,7 +269,31 @@ fondo translúcido + `backdrop-blur`:
   la tribuna, muestra la acción activa) abre un **panel modal** con backdrop que cubre la
   cancha, del header al timeline; al elegir una acción se cierra y se abre el drawer.
 - **Timeline** (`absolute inset-x-2 bottom`, alto `--live-timeline-h = clamp(56px,13dvh,110px)`).
-- **Panel de evento** (`absolute right`, tarjeta redondeada, no pegado al borde).
+- **Panel de evento** (`event/EventDrawer.tsx`, `absolute right`, ancho
+  `--live-drawer-w = clamp(300px,32vw,440px)`): en `short` ocupa **toda la altura**
+  (`top`/`bottom` pegados a los márgenes, ancho `min(70vw,460px)`) y se divide en **dos
+  paneles** (`short:flex-row`): grilla de jugadores a la izquierda y tipo/minuto/pie a la
+  derecha. La grilla de titulares usa `grid-cols-3 short:grid-cols-4` con celdas de alto
+  `--live-cell-h = clamp(46px,7.4dvh,60px)`, badge de dorsal con el color del equipo y
+  nombre; así los **11 titulares quedan visibles sin scroll** en los 4 viewports. Para el
+  cambio (`sub`) la grilla se alterna con pestañas **Sale/Entra**. Tocar un dorsal de la
+  cancha selecciona al jugador y sincroniza la grilla (y viceversa).
+
+- **Ficha del jugador** (`PlayerCard.tsx`): al tocar un dorsal de la cancha se abre una
+  tarjeta anclada al marcador con **foto (o camiseta CSS con el dorsal) + nombre +
+  posición + equipo + tarjetas**, y atajos **Gol / Tarjeta / Cambio** que abren el drawer
+  con ese jugador ya seleccionado. Usa "flip" por posición para no salirse de `.pitch-box`
+  (`overflow-hidden`).
+
+- **Amonestados en la cancha** (`lib/bookings.ts` + `PlayerMarker`): los eventos con
+  `playerId` se agregan en `getBookings` y cada dorsal pinta un badge **amarillo** (o
+  **rojo** si hay roja directa o segunda amarilla) en la esquina; el mismo badge aparece en
+  la ficha y en la grilla del drawer. El registro de tarjeta mapea la opción a su
+  `EventKind` real (`optionKinds`: "Roja" ya no se guarda como amarilla).
+
+- **Marcador espejado** (`ScoreboardBar.tsx`): `nombre · escudo · marcador` a cada lado,
+  con el cronómetro + fase centrados en una cápsula propia (los dos bloques usan `flex-1`
+  para mantener el centro exacto); en `short` se ocultan los nombres.
 
 - **Variante `short`** (`@media (max-height: 560px)`, declarada con `@custom-variant` en
   `index.css`): en móvil horizontal el panel de acciones pasa a **4 columnas × 2 filas**
@@ -288,5 +312,8 @@ compilado (`dist`). `tools/layout-check.mjs` abre el partido en Chrome headless 
 640×320 / 800×360 / 1024×768 / 1524×820, valida que la escena y el césped cubren el
 viewport, el AR, que el panel de acciones está **cerrado por defecto** (cancha despejada),
 que el trigger es compacto y que al abrirlo las 8 acciones caben en el panel sin scroll ni
-solapamientos, y guarda capturas en `tools/shots/` (requiere Chrome y
+solapamientos; además comprueba el orden del marcador (`nombre·escudo·marcador` espejado +
+cronómetro centrado), que los **11 titulares caben sin scroll** en el drawer, que la ficha
+del jugador aparece dentro de la cancha al tocar un dorsal, y que registrar "Roja" pinta un
+badge rojo en el marcador. Guarda capturas en `tools/shots/` (requiere Chrome y
 `node --experimental-websocket`).
