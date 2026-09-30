@@ -265,15 +265,17 @@ fondo translúcido + `backdrop-blur`:
 
 - **Header** (`absolute inset-x-2`, alto `--live-header-h = clamp(44px,9.4dvh,76px)`)
   con Volver / marcador / acciones rápidas.
-- **Rail de acciones** (`absolute left`, centrado entre header y timeline): 1 columna en
-  tablet, **2×4 en `short`**.
+- **Sidebar modal de acciones**: un **trigger flotante** compacto (`absolute left`, sobre
+  la tribuna, muestra la acción activa) abre un **panel modal** con backdrop que cubre la
+  cancha, del header al timeline; al elegir una acción se cierra y se abre el drawer.
 - **Timeline** (`absolute inset-x-2 bottom`, alto `--live-timeline-h = clamp(56px,13dvh,110px)`).
 - **Panel de evento** (`absolute right`, tarjeta redondeada, no pegado al borde).
 
 - **Variante `short`** (`@media (max-height: 560px)`, declarada con `@custom-variant` en
-  `index.css`): en móvil horizontal el rail pasa a **2 columnas × 4 filas** con botones
-  "icono + etiqueta diminuta" e iconos reducidos, para que las 8 acciones + los botones
-  de fase quepan sin scroll; en tablet/PC el rail es de **1 columna** con etiqueta al lado.
+  `index.css`): en móvil horizontal el panel de acciones pasa a **4 columnas × 2 filas**
+  con botones "icono + etiqueta" compactos (etiquetas abreviadas donde hace falta), para
+  que las 8 acciones + los botones de fase quepan sin scroll; en tablet el panel es de
+  **2 columnas × 4 filas** con botones grandes centrados.
 - **Etiquetas de jugador**: se escalan con `cqw` (ancho real del campo) y se ocultan —salvo
   la del jugador seleccionado— cuando el campo mide <760px, vía
   `@container (max-width: 760px)` y `data-selected`. Así los nombres no tapan la cancha en
@@ -284,6 +286,7 @@ fondo translúcido + `backdrop-blur`:
 Verificación: `tools/verify-live-css.ps1` audita los tokens de layout en `src` y en el CSS
 compilado (`dist`). `tools/layout-check.mjs` abre el partido en Chrome headless a
 640×320 / 800×360 / 1024×768 / 1524×820, valida que la escena y el césped cubren el
-viewport, el AR y que las 8 acciones caben en el rail flotante sin scroll ni
+viewport, el AR, que el panel de acciones está **cerrado por defecto** (cancha despejada),
+que el trigger es compacto y que al abrirlo las 8 acciones caben en el panel sin scroll ni
 solapamientos, y guarda capturas en `tools/shots/` (requiere Chrome y
 `node --experimental-websocket`).

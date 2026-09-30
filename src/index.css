@@ -89,6 +89,8 @@ body {
   --live-header-h: clamp(44px, 9.4dvh, 76px);
   --live-timeline-h: clamp(56px, 13dvh, 110px);
   --live-gap: 0.5rem;
+  --live-sheet-w: clamp(300px, 62vw, 560px);
+  --live-rail-trigger: clamp(46px, 7.6dvh, 58px);
 }
 
 /* Escenario del campo: contenedor de consulta (size) para poder usar cqw/cqh

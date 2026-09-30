@@ -26,6 +26,8 @@ export interface ActionConfig {
   id: ActionKind
   /** Etiqueta del rail (dos palabras si aplica). */
   label: string
+  /** Etiqueta abreviada para el panel compacto (`short`); si falta se usa `label`. */
+  shortLabel?: string
   title: string
   eventKind: EventKind
   showSide: boolean
@@ -120,6 +122,7 @@ export const ACTIONS: Record<ActionKind, ActionConfig> = {
   freekick: {
     id: 'freekick',
     label: 'Tiro libre',
+    shortLabel: 'T. libre',
     title: 'Registrar tiro libre',
     eventKind: 'freekick',
     showSide: true,
@@ -133,6 +136,7 @@ export const ACTIONS: Record<ActionKind, ActionConfig> = {
   corner: {
     id: 'corner',
     label: 'Tiro de esquina',
+    shortLabel: 'Esquina',
     title: 'Registrar tiro de esquina',
     eventKind: 'corner',
     showSide: true,

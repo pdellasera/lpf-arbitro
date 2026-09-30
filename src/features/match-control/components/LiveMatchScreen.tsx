@@ -42,12 +42,14 @@ export function LiveMatchScreen({ match, onBack }: LiveMatchScreenProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
   const [registryOpen, setRegistryOpen] = useState(false)
+  const [railOpen, setRailOpen] = useState(false)
 
   const minute = Math.floor(seconds / 60)
   const config = ACTIONS[activeAction]
 
   function handleSelectAction(id: ActionKind) {
     setActiveAction(id)
+    setRailOpen(false)
     setDrawerOpen(true)
   }
 
@@ -62,6 +64,7 @@ export function LiveMatchScreen({ match, onBack }: LiveMatchScreenProps) {
   }
 
   function handlePhasePrimary() {
+    setRailOpen(false)
     if (phase === 'pre') {
       startMatch()
     } else if (phase === 'break') {
@@ -110,16 +113,22 @@ export function LiveMatchScreen({ match, onBack }: LiveMatchScreenProps) {
             <TopQuickActions />
           </header>
 
-          {/* Rail de acciones flotante (centrado entre header y timeline) */}
+          {/* Sidebar modal de acciones (trigger flotante + panel sobre la cancha) */}
           <RefereeActionRail
+            open={railOpen}
             active={activeAction}
             onSelect={handleSelectAction}
+            onOpen={() => setRailOpen(true)}
+            onClose={() => setRailOpen(false)}
             header={
               <MatchPhaseControl
                 phase={phase}
                 periodsCount={periods.length}
                 onPrimary={handlePhasePrimary}
-                onRegistry={() => setRegistryOpen(true)}
+                onRegistry={() => {
+                  setRailOpen(false)
+                  setRegistryOpen(true)
+                }}
               />
             }
           />

@@ -205,27 +205,24 @@ try {
       const box = document.querySelector('.pitch-box')
       const stage = document.querySelector('.pitch-stage')
       const grass = document.querySelector('[data-grass]')
-      const rail = document.querySelector('[data-rail]')
-      const buttons = [...document.querySelectorAll('[data-action]')]
+      const trigger = document.querySelector('[data-rail-trigger]')
       const back = document.querySelector('button[aria-label="Volver"]')
       const header = back ? back.parentElement : null
       const headerRect = header ? header.getBoundingClientRect() : null
       const boxRect = box ? box.getBoundingClientRect() : null
       const stageRect = stage ? stage.getBoundingClientRect() : null
       const grassRect = grass ? grass.getBoundingClientRect() : null
-      const railRect = rail ? rail.getBoundingClientRect() : null
+      const triggerRect = trigger ? trigger.getBoundingClientRect() : null
       const timeline = document.querySelector('.live-timeline')
       const timelineRect = timeline ? timeline.getBoundingClientRect() : null
       const coarse = matchMedia('(pointer: coarse)').matches
       const fine = matchMedia('(pointer: fine)').matches
-      const within = railRect
-        ? buttons.every((b) => {
-            const r = b.getBoundingClientRect()
-            return r.top >= railRect.top - 1 && r.bottom <= railRect.bottom + 1 && r.left >= railRect.left - 1 && r.right <= railRect.right + 1
-          })
-        : false
       const coversViewport = (r) =>
         r && Math.abs(r.left) < 1 && Math.abs(r.top) < 1 && Math.abs(r.width - innerWidth) < 1 && Math.abs(r.height - innerHeight) < 1
+      const center = boxRect
+        ? document.elementFromPoint(boxRect.left + boxRect.width / 2, boxRect.top + boxRect.height / 2)
+        : null
+      const centerInBox = center ? !!center.closest('.pitch-box') : false
       return {
         coarse, fine,
         vw: innerWidth, vh: innerHeight,
@@ -234,11 +231,10 @@ try {
         box: boxRect ? { w: Math.round(boxRect.width), h: Math.round(boxRect.height), ar: boxRect.width / boxRect.height } : null,
         stageCovers: coversViewport(stageRect),
         grassCovers: coversViewport(grassRect),
-        rail: railRect ? { w: Math.round(railRect.width), h: Math.round(railRect.height), top: Math.round(railRect.top), bottom: Math.round(railRect.bottom) } : null,
+        railClosed: document.querySelector('[data-rail]') === null,
+        trigger: triggerRect ? { w: Math.round(triggerRect.width), h: Math.round(triggerRect.height) } : null,
+        centerInBox,
         timeline: timelineRect ? { top: Math.round(timelineRect.top), bottom: Math.round(timelineRect.bottom) } : null,
-        buttonsCount: buttons.length,
-        allWithin: within,
-        railScrollable: rail ? rail.scrollHeight > rail.clientHeight : null,
       }
     })()`)
 
@@ -252,15 +248,61 @@ try {
       const arOk = Math.abs(info.box.ar - EXPECT_AR) / EXPECT_AR < 0.005
       ok(arOk, 'relación de aspecto 976:560 (sin distorsión)', `AR=${info.box.ar.toFixed(4)} (esperado ${EXPECT_AR.toFixed(4)}) · ${info.box.w}x${info.box.h}`)
     }
-    ok(info.buttonsCount === 8, '8 acciones en el rail', `${info.buttonsCount} botones`)
-    ok(info.allWithin, 'las 8 acciones caben dentro del rail (sin scroll)', `rail ${info.rail?.w}x${info.rail?.h}px`)
-    ok(info.railScrollable === false, 'rail sin scroll interno', `scrollable=${info.railScrollable}`)
-    ok(info.rail && info.headerBottom != null && info.rail.top >= info.headerBottom - 1, 'rail no se solapa con el header', `rail.top=${info.rail?.top} header.bottom=${info.headerBottom}`)
-    ok(info.rail && info.timeline && info.rail.bottom <= info.timeline.top + 1, 'rail no se solapa con el timeline', `rail.bottom=${info.rail?.bottom} timeline.top=${info.timeline?.top}`)
+    ok(info.railClosed, 'panel de acciones cerrado por defecto (cancha despejada)')
+    ok(info.trigger != null && info.trigger.w <= 64 && info.trigger.h <= 64, 'trigger compacto', info.trigger ? `${info.trigger.w}x${info.trigger.h}px` : 'sin trigger')
+    ok(info.centerInBox, 'centro de la cancha despejado', 'elementFromPoint dentro de .pitch-box')
 
-    const shot = await send('Page.captureScreenshot', { format: 'png' })
-    writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}.png`), Buffer.from(shot.result.data, 'base64'))
+    const shotClosed = await send('Page.captureScreenshot', { format: 'png' })
+    writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}.png`), Buffer.from(shotClosed.result.data, 'base64'))
     console.log(`  captura → tools/shots/${vp.name}.png`)
+
+    // Abre el sidebar modal de acciones.
+    await evaluate(`(() => { const t = document.querySelector('[data-rail-trigger]'); if (t) t.click() })()`)
+    const opened = await waitFor(`document.querySelector('[data-rail]') !== null`, 800)
+    ok(opened, 'se abre el panel de acciones', opened ? '' : 'no apareció [data-rail]')
+
+    const sheet = await evaluate(`(() => {
+      const rail = document.querySelector('[data-rail]')
+      const railRect = rail ? rail.getBoundingClientRect() : null
+      const buttons = [...document.querySelectorAll('[data-rail] [data-action]')]
+      const within = railRect
+        ? buttons.every((b) => {
+            const r = b.getBoundingClientRect()
+            return r.top >= railRect.top - 1 && r.bottom <= railRect.bottom + 1 && r.left >= railRect.left - 1 && r.right <= railRect.right + 1
+          })
+        : false
+      const back = document.querySelector('button[aria-label="Volver"]')
+      const header = back ? back.parentElement : null
+      const headerBottom = header ? Math.round(header.getBoundingClientRect().bottom) : null
+      const timeline = document.querySelector('.live-timeline')
+      const timelineTop = timeline ? Math.round(timeline.getBoundingClientRect().top) : null
+      return {
+        rail: railRect ? { w: Math.round(railRect.width), h: Math.round(railRect.height), top: Math.round(railRect.top), bottom: Math.round(railRect.bottom) } : null,
+        buttonsCount: buttons.length,
+        allWithin: within,
+        scrollable: rail ? rail.scrollHeight > rail.clientHeight : null,
+        headerBottom,
+        timelineTop,
+      }
+    })()`)
+
+    ok(sheet.buttonsCount === 8, '8 acciones en el panel', `${sheet.buttonsCount} botones`)
+    ok(sheet.allWithin, 'las 8 acciones caben dentro del panel (sin scroll)', `panel ${sheet.rail?.w}x${sheet.rail?.h}px`)
+    ok(sheet.scrollable === false, 'panel sin scroll interno', `scrollable=${sheet.scrollable}`)
+    ok(sheet.rail && sheet.headerBottom != null && sheet.rail.top >= sheet.headerBottom - 1, 'panel no se solapa con el header', `panel.top=${sheet.rail?.top} header.bottom=${sheet.headerBottom}`)
+    ok(sheet.rail && sheet.timelineTop != null && sheet.rail.bottom <= sheet.timelineTop + 1, 'panel no se solapa con el timeline', `panel.bottom=${sheet.rail?.bottom} timeline.top=${sheet.timelineTop}`)
+
+    const shotOpen = await send('Page.captureScreenshot', { format: 'png' })
+    writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}-sheet.png`), Buffer.from(shotOpen.result.data, 'base64'))
+    console.log(`  captura → tools/shots/${vp.name}-sheet.png`)
+
+    // Elige una acción: cierra el panel y abre el drawer de evento.
+    await evaluate(`(() => { const b = document.querySelector('[data-rail] [data-action="goal"]'); if (b) b.click() })()`)
+    const after = await waitFor(
+      `document.querySelector('[data-rail]') === null && document.querySelector('aside[aria-label="Registrar gol"]') !== null`,
+      800,
+    )
+    ok(after, 'elegir acción cierra el panel y abre el drawer', after ? '' : 'no pasó a registrar gol')
   }
 } finally {
   chrome.kill()

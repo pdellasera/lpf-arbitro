@@ -35,6 +35,11 @@ $layoutTokens = @(
   @('tribuna band-y',        '--band-y'),
   @('marco flotante header', '--live-header-h'),
   @('marco flotante timeline','--live-timeline-h'),
+  @('panel sheet',           '--live-sheet-w'),
+  @('trigger rail',          '--live-rail-trigger'),
+  @('data-rail-trigger',     'data-rail-trigger'),
+  @('data-rail-backdrop',    'data-rail-backdrop'),
+  @('aria-modal',            'aria-modal'),
   @('marcador escala cqw',   '2.9cqw'),
   @('variante short',        '@custom-variant short'),
   @('contenedor size',       'container-type: size'),
@@ -53,7 +58,10 @@ $distCssFile = (Get-ChildItem (Join-Path $root 'dist\assets') -Filter '*.css' -F
 $distCss = Get-Content -Raw $distCssFile
 $distTokens = @(
   @('variante short compilada',    '@media (height<=560px)'),
-  @('rail 2 columnas',             'grid-cols-2'),
+  @('sheet 2 columnas',            'grid-cols-2'),
+  @('sheet 4 columnas short',      'grid-cols-4'),
+  @('panel sheet compilado',       '--live-sheet-w'),
+  @('trigger rail compilado',      '--live-rail-trigger'),
   @('container-type size',         'container-type:size'),
   @('container-type inline-size',  'container-type:inline-size'),
   @('query etiqueta compilada',    '@container (width<=760px)'),
