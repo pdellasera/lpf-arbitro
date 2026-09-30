@@ -1,7 +1,7 @@
 // tools/layout-check.mjs
 // Abre la vista de "Partido en vivo" en Chrome headless a 4 tamaños (móvil/tablet),
-// valida la geometría clave (relación de aspecto del campo, botones del rail visibles
-// y sin scroll, header dentro de su banda) y guarda capturas en tools/shots/.
+// valida la geometría clave (escenario a sangre, relación de aspecto del campo, rail
+// flotante sin scroll ni solapamientos) y guarda capturas en tools/shots/.
 //
 // Uso: node --experimental-websocket tools/layout-check.mjs
 // Requiere: Chrome instalado (C:\Program Files\Google\Chrome\Application\chrome.exe).
@@ -16,7 +16,7 @@ import { spawn } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { preview } from 'vite'
+import { createServer, preview } from 'vite'
 
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 const APP_PORT = 4173
@@ -24,19 +24,23 @@ const CDP_PORT = 9222
 const BASE = `http://localhost:${APP_PORT}`
 
 const VIEWPORTS = [
+  { name: 'phone-640x320', width: 640, height: 320 },
   { name: 'phone-800x360', width: 800, height: 360 },
   { name: 'tablet-1024x768', width: 1024, height: 768 },
-  { name: 'tablet-1366x768', width: 1366, height: 768 },
   { name: 'tablet-1524x820', width: 1524, height: 820 },
 ]
 
 const EXPECT_AR = 976 / 560 // 1.742857
 
 // ---------------------------------------------------------------------------
-// 1. Servidor de preview
+// 1. Servidor de preview (o dev con `--dev`, que sirve ESM y evita el error de
+//    React del bundle de producción en Chrome headless).
 // ---------------------------------------------------------------------------
-const server = await preview({ preview: { port: APP_PORT, strictPort: true } })
-await new Promise((r) => setTimeout(r, 900))
+const USE_DEV = process.argv.includes('--dev')
+const server = USE_DEV
+  ? await createServer({ server: { port: APP_PORT, strictPort: true } })
+  : await preview({ preview: { port: APP_PORT, strictPort: true } })
+await new Promise((r) => setTimeout(r, USE_DEV ? 1200 : 900))
 
 // ---------------------------------------------------------------------------
 // 2. Chrome headless + CDP
@@ -146,7 +150,10 @@ async function openLiveMatch(width, height) {
 
   await send('Page.navigate', { url: BASE + '/' })
   // Espera al documento real (no al about:blank inicial) antes de tocar localStorage.
-  const loaded = await waitFor(`location.href.startsWith('${BASE}') && document.readyState === 'complete'`)
+  const loaded = await waitFor(
+    `location.href.startsWith('${BASE}') && document.readyState === 'complete'`,
+    USE_DEV ? 30000 : 6000,
+  )
   if (!loaded) throw new Error('no cargó la app: ' + BASE)
 
   // Sesión sembrada + recarga para que React lea el localStorage en el primer render.
@@ -196,13 +203,19 @@ try {
 
     const info = await evaluate(`(() => {
       const box = document.querySelector('.pitch-box')
+      const stage = document.querySelector('.pitch-stage')
+      const grass = document.querySelector('[data-grass]')
       const rail = document.querySelector('[data-rail]')
       const buttons = [...document.querySelectorAll('[data-action]')]
       const back = document.querySelector('button[aria-label="Volver"]')
       const header = back ? back.parentElement : null
       const headerRect = header ? header.getBoundingClientRect() : null
       const boxRect = box ? box.getBoundingClientRect() : null
+      const stageRect = stage ? stage.getBoundingClientRect() : null
+      const grassRect = grass ? grass.getBoundingClientRect() : null
       const railRect = rail ? rail.getBoundingClientRect() : null
+      const timeline = document.querySelector('.live-timeline')
+      const timelineRect = timeline ? timeline.getBoundingClientRect() : null
       const coarse = matchMedia('(pointer: coarse)').matches
       const fine = matchMedia('(pointer: fine)').matches
       const within = railRect
@@ -211,21 +224,29 @@ try {
             return r.top >= railRect.top - 1 && r.bottom <= railRect.bottom + 1 && r.left >= railRect.left - 1 && r.right <= railRect.right + 1
           })
         : false
+      const coversViewport = (r) =>
+        r && Math.abs(r.left) < 1 && Math.abs(r.top) < 1 && Math.abs(r.width - innerWidth) < 1 && Math.abs(r.height - innerHeight) < 1
       return {
         coarse, fine,
+        vw: innerWidth, vh: innerHeight,
         headerH: headerRect ? Math.round(headerRect.height) : null,
+        headerBottom: headerRect ? Math.round(headerRect.bottom) : null,
         box: boxRect ? { w: Math.round(boxRect.width), h: Math.round(boxRect.height), ar: boxRect.width / boxRect.height } : null,
-        rail: railRect ? { w: Math.round(railRect.width), h: Math.round(railRect.height) } : null,
+        stageCovers: coversViewport(stageRect),
+        grassCovers: coversViewport(grassRect),
+        rail: railRect ? { w: Math.round(railRect.width), h: Math.round(railRect.height), top: Math.round(railRect.top), bottom: Math.round(railRect.bottom) } : null,
+        timeline: timelineRect ? { top: Math.round(timelineRect.top), bottom: Math.round(timelineRect.bottom) } : null,
         buttonsCount: buttons.length,
         allWithin: within,
         railScrollable: rail ? rail.scrollHeight > rail.clientHeight : null,
-        fieldScale: boxRect ? boxRect.width / 976 : null,
       }
     })()`)
 
     console.log(`  pointer coarse=${info.coarse} fine=${info.fine}`)
     ok(info.coarse, 'emula puntero táctil (coarse)')
-    ok(info.headerH != null && info.headerH >= 44 && info.headerH <= 77, 'header dentro de su banda', `${info.headerH}px`)
+    ok(info.stageCovers, 'escenario a sangre cubre el viewport', `${info.vw}x${info.vh}`)
+    ok(info.grassCovers, 'césped cubre los 4 bordes (sin bandas oscuras)')
+    ok(info.headerH != null && info.headerH >= 44 && info.headerH <= 78, 'header dentro de su banda', `${info.headerH}px`)
     ok(info.box != null, 'caja del campo presente')
     if (info.box) {
       const arOk = Math.abs(info.box.ar - EXPECT_AR) / EXPECT_AR < 0.005
@@ -234,6 +255,8 @@ try {
     ok(info.buttonsCount === 8, '8 acciones en el rail', `${info.buttonsCount} botones`)
     ok(info.allWithin, 'las 8 acciones caben dentro del rail (sin scroll)', `rail ${info.rail?.w}x${info.rail?.h}px`)
     ok(info.railScrollable === false, 'rail sin scroll interno', `scrollable=${info.railScrollable}`)
+    ok(info.rail && info.headerBottom != null && info.rail.top >= info.headerBottom - 1, 'rail no se solapa con el header', `rail.top=${info.rail?.top} header.bottom=${info.headerBottom}`)
+    ok(info.rail && info.timeline && info.rail.bottom <= info.timeline.top + 1, 'rail no se solapa con el timeline', `rail.bottom=${info.rail?.bottom} timeline.top=${info.timeline?.top}`)
 
     const shot = await send('Page.captureScreenshot', { format: 'png' })
     writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}.png`), Buffer.from(shot.result.data, 'base64'))

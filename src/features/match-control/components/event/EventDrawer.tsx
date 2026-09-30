@@ -75,8 +75,13 @@ export function EventDrawer({
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: 60, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-          className="absolute bottom-0 right-0 top-0 z-30 flex flex-col overflow-hidden rounded-l-2xl bg-[#001222]/95"
-          style={{ width: 'clamp(280px, 24vw, 360px)' }}
+          className="absolute z-30 flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#001222]/95 shadow-2xl backdrop-blur"
+          style={{
+            right: 'max(var(--live-gap), env(safe-area-inset-right))',
+            top: 'calc(var(--live-header-h) + max(var(--live-gap), env(safe-area-inset-top)) + var(--live-gap))',
+            bottom: 'calc(var(--live-timeline-h) + max(var(--live-gap), env(safe-area-inset-bottom)) + var(--live-gap))',
+            width: 'clamp(280px, 24vw, 360px)',
+          }}
           role="dialog"
           aria-label={config.title}
         >

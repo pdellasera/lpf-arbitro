@@ -83,10 +83,23 @@ body {
 
 /* --- Control de partido en vivo ------------------------------------ */
 
+/* Medidas del marco flotante: la UI (header, rail, timeline, panel) flota
+   sobre la escena a sangre; aquí se centraliza su altura y el hueco a bordes. */
+:root {
+  --live-header-h: clamp(44px, 9.4dvh, 76px);
+  --live-timeline-h: clamp(56px, 13dvh, 110px);
+  --live-gap: 0.5rem;
+}
+
 /* Escenario del campo: contenedor de consulta (size) para poder usar cqw/cqh
-   y encajar el rectángulo de césped 976x560 sin distorsión. */
+   y encajar el rectángulo de césped 976x560 sin distorsión, a pantalla completa.
+   La cancha ya no reserva aire para la UI: todo lo demás flota por encima. */
 .pitch-stage {
   container-type: size;
+  --pitch-w: min(100cqw, calc(100cqh * 1.742857));
+  --pitch-h: min(100cqh, calc(100cqw / 1.742857));
+  --band-x: calc((100cqw - var(--pitch-w)) / 2);
+  --band-y: calc((100cqh - var(--pitch-h)) / 2);
 }
 
 /* Caja del campo: contenedor de consulta (inline-size) para escalar los
@@ -94,6 +107,8 @@ body {
    etiquetas cuando el campo se queda corto. */
 .pitch-box {
   container-type: inline-size;
+  width: var(--pitch-w);
+  aspect-ratio: 976 / 560;
 }
 
 /* En campos < 760px de ancho solo se mantiene visible la etiqueta del

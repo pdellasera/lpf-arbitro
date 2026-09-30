@@ -240,24 +240,40 @@ Para conectar un backend real, define `VITE_API_URL` (ver `.env.example`).
   `overscroll-behavior: none`, `touch-action: manipulation`, inputs ≥16px (evita el zoom de
   iOS al enfocar) y `interactive-widget=resizes-content` (el teclado no tapa el botón).
 
-## Partido en vivo — layout sin distorsión
+## Partido en vivo — escena a sangre + UI flotante
 
-El tablero de cancha (`PitchBoard.tsx`) conserva la relación de aspecto del diseño
-**976×560** (césped 950×560 + portería de 26px). La caja del campo se dimensiona con:
+El tablero de cancha (`PitchBoard.tsx`) ahora es una **capa de fondo a pantalla
+completa** (`absolute inset-0`): el césped a rayas cubre los **4 bordes** del viewport
+(no hay bandas oscuras) y las tribunas (`crowd-top`/`crowd-side`) ocupan exactamente el
+letterbox que deja el campo. El campo conserva la relación de aspecto del diseño
+**976×560** (césped 950×560 + portería de 26px) y se centra con:
 
 ```css
-aspect-ratio: 976 / 560;
-width: min(92cqw, calc(90cqh * 1.742857));
+.pitch-stage { container-type: size; }        /* escenario = contenedor de consulta */
+.pitch-stage {
+  --pitch-w: min(100cqw, calc(100cqh * 1.742857));
+  --pitch-h: min(100cqh, calc(100cqw / 1.742857));
+  --band-x: calc((100cqw - var(--pitch-w)) / 2);   /* tribuna lateral */
+  --band-y: calc((100cqh - var(--pitch-h)) / 2);   /* tribuna sup/inf */
+}
+.pitch-box { width: var(--pitch-w); aspect-ratio: 976 / 560; }
 ```
 
-sobre un contenedor `container-type: size` (`.pitch-stage`), de modo que el SVG de marcas
-(`viewBox="-26 0 976 560"`) se estira 1:1 y **no se deforma** en ningún viewport (el
-`90cqh` es el "aire" reservado a la tribuna; súbelo/bájalo para más/menos margen).
+de modo que el SVG de marcas (`viewBox="-26 0 976 560"`) se estira 1:1 y **no se
+deforma** en ningún viewport. Todo lo demás **flota** sobre la escena, compacto y con
+fondo translúcido + `backdrop-blur`:
+
+- **Header** (`absolute inset-x-2`, alto `--live-header-h = clamp(44px,9.4dvh,76px)`)
+  con Volver / marcador / acciones rápidas.
+- **Rail de acciones** (`absolute left`, centrado entre header y timeline): 1 columna en
+  tablet, **2×4 en `short`**.
+- **Timeline** (`absolute inset-x-2 bottom`, alto `--live-timeline-h = clamp(56px,13dvh,110px)`).
+- **Panel de evento** (`absolute right`, tarjeta redondeada, no pegado al borde).
 
 - **Variante `short`** (`@media (max-height: 560px)`, declarada con `@custom-variant` en
   `index.css`): en móvil horizontal el rail pasa a **2 columnas × 4 filas** con botones
-  "icono + etiqueta diminuta", para que las 8 acciones + los botones de fase quepan sin
-  scroll; en tablet/PC el rail es de **1 columna** con etiqueta al lado.
+  "icono + etiqueta diminuta" e iconos reducidos, para que las 8 acciones + los botones
+  de fase quepan sin scroll; en tablet/PC el rail es de **1 columna** con etiqueta al lado.
 - **Etiquetas de jugador**: se escalan con `cqw` (ancho real del campo) y se ocultan —salvo
   la del jugador seleccionado— cuando el campo mide <760px, vía
   `@container (max-width: 760px)` y `data-selected`. Así los nombres no tapan la cancha en
@@ -267,6 +283,7 @@ sobre un contenedor `container-type: size` (`.pitch-stage`), de modo que el SVG 
 
 Verificación: `tools/verify-live-css.ps1` audita los tokens de layout en `src` y en el CSS
 compilado (`dist`). `tools/layout-check.mjs` abre el partido en Chrome headless a
-800×360 / 1024×768 / 1366×768 / 1524×820, valida el AR y que las 8 acciones caben en el
-rail, y guarda capturas en `tools/shots/` (requiere Chrome y
+640×320 / 800×360 / 1024×768 / 1524×820, valida que la escena y el césped cubren el
+viewport, el AR y que las 8 acciones caben en el rail flotante sin scroll ni
+solapamientos, y guarda capturas en `tools/shots/` (requiere Chrome y
 `node --experimental-websocket`).

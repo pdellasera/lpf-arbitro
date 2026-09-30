@@ -33,7 +33,7 @@ export function MatchPhaseControl({ phase, periodsCount, onPrimary, onRegistry }
         aria-label={cfg.label}
         title={cfg.label}
         className={cn(
-          'flex flex-1 items-center gap-1.5 rounded-xl px-2 py-1.5 text-left transition-colors short:flex-col short:items-center short:justify-center short:gap-1 short:px-1',
+          'flex flex-1 items-center gap-1.5 rounded-xl px-2 py-1.5 text-left transition-colors short:flex-col short:items-center short:justify-center short:gap-1 short:px-1 short:py-1',
           cfg.tone,
           cfg.disabled ? 'cursor-default' : 'hover:brightness-110',
         )}
@@ -51,7 +51,7 @@ export function MatchPhaseControl({ phase, periodsCount, onPrimary, onRegistry }
         aria-label="Registro de partes"
         title="Registro de partes"
         className={cn(
-          'flex flex-1 items-center gap-1.5 rounded-xl bg-[#0f2135]/80 px-2 py-1.5 text-left transition-colors short:flex-col short:items-center short:justify-center short:gap-1 short:px-1',
+          'flex flex-1 items-center gap-1.5 rounded-xl bg-[#0f2135]/80 px-2 py-1.5 text-left transition-colors short:flex-col short:items-center short:justify-center short:gap-1 short:px-1 short:py-1',
           periodsCount === 0 ? 'cursor-default opacity-50' : 'hover:bg-[#0f2135]',
         )}
       >

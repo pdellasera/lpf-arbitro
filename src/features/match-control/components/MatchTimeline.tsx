@@ -78,7 +78,7 @@ export function MatchTimeline({ match, minute, running, onTogglePlay }: MatchTim
   const secondAdded = match.periods.find((p) => p.half === 2)?.addedSeconds ?? 0
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-t-2xl bg-[#071423]/95">
+    <div className="relative h-full w-full overflow-hidden rounded-2xl bg-[#071423]/95">
       {/* play/pause */}
       <button
         type="button"

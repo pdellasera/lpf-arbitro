@@ -28,9 +28,13 @@ Write-Output ''
 Write-Output '=== Tokens de layout del campo (src) ==='
 $layoutTokens = @(
   @('AR campo 976/560',      '976 / 560'),
-  @('ancho min(92cqw...)',   '92cqw'),
-  @('alto disponible 90cqh', '90cqh'),
+  @('ancho campo 100cqw',    '100cqw'),
+  @('alto campo 100cqh',     '100cqh'),
   @('factor AR 976/560',     '1.742857'),
+  @('tribuna band-x',        '--band-x'),
+  @('tribuna band-y',        '--band-y'),
+  @('marco flotante header', '--live-header-h'),
+  @('marco flotante timeline','--live-timeline-h'),
   @('marcador escala cqw',   '2.9cqw'),
   @('variante short',        '@custom-variant short'),
   @('contenedor size',       'container-type: size'),
@@ -53,7 +57,13 @@ $distTokens = @(
   @('container-type size',         'container-type:size'),
   @('container-type inline-size',  'container-type:inline-size'),
   @('query etiqueta compilada',    '@container (width<=760px)'),
-  @('clase player-label',          'player-label')
+  @('clase player-label',          'player-label'),
+  @('campo a sangre 100cqw',       '100cqw'),
+  @('tribuna band-x compilada',    '--band-x'),
+  @('tribuna band-y compilada',    '--band-y'),
+  @('marco header compilado',      '--live-header-h'),
+  @('marco timeline compilado',    '--live-timeline-h'),
+  @('aspect-ratio 976/560',        'aspect-ratio:976/560')
 )
 foreach ($t in $distTokens) {
   $name = $t[0]; $needle = $t[1]

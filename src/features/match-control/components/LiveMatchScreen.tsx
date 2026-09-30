@@ -73,21 +73,33 @@ export function LiveMatchScreen({ match, onBack }: LiveMatchScreenProps) {
   }
 
   return (
-    <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[#04121f] text-white">
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-[#04121f] text-white">
       {orientation === 'portrait' ? (
         <OrientationGate />
       ) : (
         <>
-          {/* Barra superior */}
-          <div
-            className="relative z-20 flex shrink-0 items-center gap-2 px-2"
-            style={{ height: 'clamp(44px, 9.4dvh, 76px)' }}
+          {/* Capa 0/1: escenario a sangre (cancha + gradas + césped a pantalla completa) */}
+          <PitchBoard>
+            {live.players.map((p) => (
+              <PlayerMarker
+                key={p.id}
+                player={p}
+                selected={p.id === selectedPlayerId}
+                onSelect={setSelectedPlayerId}
+              />
+            ))}
+          </PitchBoard>
+
+          {/* Capa 2: barra superior flotante */}
+          <header
+            className="absolute inset-x-2 z-20 flex items-center gap-2"
+            style={{ top: 'max(var(--live-gap), env(safe-area-inset-top))', height: 'var(--live-header-h)' }}
           >
             <button
               type="button"
               onClick={onBack}
               aria-label="Volver"
-              className="flex shrink-0 items-center justify-center rounded-2xl bg-[#0f2135]/90 text-white ring-1 ring-white/10 hover:bg-[#0f2135]"
+              className="flex shrink-0 items-center justify-center rounded-2xl bg-[#0f2135]/90 text-white ring-1 ring-white/10 backdrop-blur hover:bg-[#0f2135]"
               style={{ width: 'clamp(38px, 7.2dvh, 52px)', height: 'clamp(38px, 7.2dvh, 52px)' }}
             >
               <ArrowLeft className="h-[clamp(18px,2.8dvh,24px)] w-[clamp(18px,2.8dvh,24px)]" />
@@ -96,53 +108,41 @@ export function LiveMatchScreen({ match, onBack }: LiveMatchScreenProps) {
               <ScoreboardBar match={live} clock={seconds} />
             </div>
             <TopQuickActions />
+          </header>
+
+          {/* Rail de acciones flotante (centrado entre header y timeline) */}
+          <RefereeActionRail
+            active={activeAction}
+            onSelect={handleSelectAction}
+            header={
+              <MatchPhaseControl
+                phase={phase}
+                periodsCount={periods.length}
+                onPrimary={handlePhasePrimary}
+                onRegistry={() => setRegistryOpen(true)}
+              />
+            }
+          />
+
+          {/* Timeline flotante */}
+          <div
+            className="live-timeline absolute inset-x-2 z-20"
+            style={{ bottom: 'max(var(--live-gap), env(safe-area-inset-bottom))', height: 'var(--live-timeline-h)' }}
+          >
+            <MatchTimeline match={live} minute={minute} running={running} onTogglePlay={toggleRunning} />
           </div>
 
-          {/* Contenido */}
-          <div className="relative flex min-h-0 flex-1">
-            {/* Columna izquierda: rail + campo arriba, timeline abajo */}
-            <div className="flex min-w-0 flex-1 flex-col">
-              <div className="flex min-h-0 flex-1">
-                <RefereeActionRail
-                  active={activeAction}
-                  onSelect={handleSelectAction}
-                  header={
-                    <MatchPhaseControl
-                      phase={phase}
-                      periodsCount={periods.length}
-                      onPrimary={handlePhasePrimary}
-                      onRegistry={() => setRegistryOpen(true)}
-                    />
-                  }
-                />
-                <PitchBoard>
-                  {live.players.map((p) => (
-                    <PlayerMarker
-                      key={p.id}
-                      player={p}
-                      selected={p.id === selectedPlayerId}
-                      onSelect={setSelectedPlayerId}
-                    />
-                  ))}
-                </PitchBoard>
-              </div>
-              <div className="shrink-0" style={{ height: 'clamp(64px, 13.2dvh, 124px)' }}>
-                <MatchTimeline match={live} minute={minute} running={running} onTogglePlay={toggleRunning} />
-              </div>
-            </div>
-
-            {/* Panel de evento (sidebar) */}
-            <EventDrawer
-              key={config.id}
-              open={drawerOpen}
-              config={config}
-              match={live}
-              minute={minute}
-              onClose={() => setDrawerOpen(false)}
-              onSelectAction={handleSelectAction}
-              onSubmit={handleSubmit}
-            />
-          </div>
+          {/* Panel de evento (tarjeta flotante) */}
+          <EventDrawer
+            key={config.id}
+            open={drawerOpen}
+            config={config}
+            match={live}
+            minute={minute}
+            onClose={() => setDrawerOpen(false)}
+            onSelectAction={handleSelectAction}
+            onSubmit={handleSubmit}
+          />
 
           <PeriodsDialog open={registryOpen} periods={periods} onClose={() => setRegistryOpen(false)} />
         </>
