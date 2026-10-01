@@ -22,9 +22,7 @@ if ($LASTEXITCODE -ne 0) { throw "ffmpeg preview bg falló" }
 # --- Assets finales optimizados ---
 & $ffmpeg -hide_banner -loglevel error -y -i "$root\assets\login_background.png" -c:v libwebp -quality 82 -compression_level 6 "$srcAssets\login_background.webp"
 if ($LASTEXITCODE -ne 0) { throw "ffmpeg bg webp falló" }
-# Escudo (solo el shield, recortado del lockup): bbox shield ~ x158-800, y58-740
-& $ffmpeg -hide_banner -loglevel error -y -i "$root\assets\logo.png" -vf "crop=645:685:155:55" -c:v libwebp -lossless 1 "$srcAssets\shield.webp"
-if ($LASTEXITCODE -ne 0) { throw "ffmpeg shield webp falló" }
+# El logo in-app (águila blanca) se genera en tools/prepare-brand.ps1.
 
 Write-Host '=== src/assets ==='
 Get-ChildItem $srcAssets | Select-Object Name, Length | Format-Table -AutoSize

@@ -32,3 +32,8 @@ export interface MatchDay {
   label: string
   sublabel: string
 }
+
+export interface MatchSchedule {
+  day: MatchDay
+  matches: Match[]
+}

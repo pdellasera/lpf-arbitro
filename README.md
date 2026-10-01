@@ -166,19 +166,26 @@ para desbloquear la instalación desde cero.
   con `?pwa=debug` que `sw-dev.js` está `active`.
 - **Firefox Android**: no emite `beforeinstallprompt` → instrucciones manuales (menú ⋮).
 
-Para regenerar los iconos tras cambiar el logo:
+Para regenerar los assets de marca y los iconos tras cambiar el logo:
 
 ```bash
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\prepare-brand.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\prepare-pwa-icons.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\verify-pwa.ps1
+```
+
+Para regenerar los escudos de clubes desde los originales en `assets/`:
+
+```bash
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\prepare-crests.ps1
 ```
 
 ## Estructura
 
 ```
 src/
-├─ assets/                      login_background.webp, shield.webp (generados)
-│  ├─ crests/                    escudos de los clubes (cai, tauro, umecit, ...)
+├─ assets/                      login_background.webp, logo-lpf.webp (generados)
+│  ├─ crests/                    escudos de clubes (cdu, sporting, tauro, san-francisco, herrera, veraguas, arabe-unido, ...)
 │  ├─ live/                      crowd-top, crowd-side (fondo del partido en vivo)
 │  └─ players/                   p1..p4 (avatares de jugadores)
 ├─ components/ui/               TextField, PrimaryButton, SecondaryButton,
@@ -199,8 +206,9 @@ src/
 │                               InstallModal, InstallInstructions, PwaDebugPanel
 ├─ lib/                         queryClient.ts, cn.ts
 └─ index.css                    tokens Tailwind v4 (@theme)
-tools/                          Generadores: prepare-assets.ps1, prepare-pwa-icons.ps1,
-                                prepare-crests.ps1, prepare-live-assets.ps1
+tools/                          Generadores: prepare-assets.ps1, prepare-brand.ps1,
+                                prepare-pwa-icons.ps1, prepare-crests.ps1,
+                                prepare-live-assets.ps1
                                 Verificación: smoke-test.mjs, verify-pwa.ps1,
                                 verify-css.ps1, verify-live-css.ps1
 tools/legacy/                   measure-*.ps1, read-*.ps1, ocr-home.ps1 (análisis del mockup)
@@ -227,8 +235,11 @@ Para conectar un backend real, define `VITE_API_URL` (ver `.env.example`).
 
 ## Notas / asunciones
 
-- El `logo.png` es un *lockup* (escudo + wordmark). Se recortó solo el **escudo**
-  (`tools/prepare-assets.ps1` → `src/assets/shield.webp`), que es lo que muestra el mockup.
+- El logo actual es un *lockup* plano (águila + wordmark "LPF") en `assets/lpf-logo.png`.
+  Para la app se usa solo el **águila**, en blanco y con fondo transparente
+  (`tools/prepare-brand.ps1` → `src/assets/logo-lpf.webp`), que es lo que muestran
+  `AuthHeader` / `DesktopNotice` / `InstallModal`. Los iconos PWA usan el águila
+  blanca sobre placa navy `#04121f` (`tools/prepare-pwa-icons.ps1`).
 - La barra de estado iOS (9:41) es parte del mockup, no de la app web; se omite.
 - La tipografía usada es **Inter** (no se pudo identificar la fuente exacta del mockup).
 - Los textos del formulario se asumen a partir del contexto (ver abajo). Si difieren del
