@@ -15,7 +15,6 @@ interface RegisterEventScreenProps {
   config: ActionConfig
   match: LiveMatch
   minute: number
-  seconds: number
   selectedPlayerId: string | null
   /** Opción preseleccionada al abrir (p. ej. color de tarjeta o tipo de incidente). */
   presetOption?: string
@@ -34,7 +33,6 @@ export function RegisterEventScreen({
   config,
   match,
   minute,
-  seconds,
   selectedPlayerId,
   presetOption,
   onSelectPlayer,
@@ -49,6 +47,7 @@ export function RegisterEventScreen({
   const [reason, setReason] = useState('')
   const [note, setNote] = useState('')
   const [addedMinutes, setAddedMinutes] = useState(0)
+  const [minuteValue, setMinuteValue] = useState(0)
 
   const starters = match.players.filter((p) => p.side === side && p.starter)
   const bench = match.players.filter((p) => p.side === side && !p.starter)
@@ -64,6 +63,7 @@ export function RegisterEventScreen({
     setReason('')
     setNote('')
     setAddedMinutes(0)
+    setMinuteValue(minute)
     setSide(initial ? (match.players.find((p) => p.id === initial)?.side ?? 'home') : 'home')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, presetOption, config.id])
@@ -90,7 +90,7 @@ export function RegisterEventScreen({
       playerId: playerId ?? undefined,
       player: player?.name,
       secondaryPlayerId: secondPlayerId ?? undefined,
-      minute,
+      minute: minuteValue,
       option: option ?? undefined,
       reason: reason || undefined,
       note: note || undefined,
@@ -139,7 +139,7 @@ export function RegisterEventScreen({
           <EditScreenTopBar title={config.title} onBack={onClose} />
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[28px] bg-white">
             <div className="min-h-0 flex-1 overflow-y-auto">
-            <ScoreStrip home={match.home} away={match.away} score={match.score} seconds={seconds} />
+            <ScoreStrip home={match.home} away={match.away} score={match.score} />
             <div className="flex flex-col gap-5 px-5 pb-8">
               {config.moreItems ? (
                 <div className="flex flex-col gap-2">
@@ -157,6 +157,33 @@ export function RegisterEventScreen({
                 </div>
               ) : (
                 <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[15px] font-bold text-ink">Minuto</span>
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        data-minute-minus
+                        onClick={() => setMinuteValue((m) => Math.max(0, m - 1))}
+                        aria-label="Restar minuto"
+                        className="flex h-11 w-12 items-center justify-center rounded-xl border border-line bg-white text-ink transition-transform active:scale-95"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span data-minute className="min-w-[44px] text-center text-[16px] font-bold tabular-nums text-ink">
+                        {minuteValue}'
+                      </span>
+                      <button
+                        type="button"
+                        data-minute-plus
+                        onClick={() => setMinuteValue((m) => m + 1)}
+                        aria-label="Sumar minuto"
+                        className="flex h-11 w-12 items-center justify-center rounded-xl border border-line bg-white text-ink transition-transform active:scale-95"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
                   {config.showSide && (!config.showPlayers || config.showSecondPlayers) && (
                     <div>
                       <FieldLabel>{config.sideLabel ?? 'Equipo'}</FieldLabel>
@@ -267,7 +294,7 @@ export function RegisterEventScreen({
           </div>
 
           {!config.moreItems && (
-            <div className="shrink-0 border-t border-line bg-white px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+            <div className="sticky bottom-0 z-10 shrink-0 border-t border-line bg-white px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
               {showExpulsion && selectedPlayer && (
                 <div className="mb-3 flex items-start gap-2.5 rounded-xl border border-pick/30 bg-[#fdecea] px-4 py-3">
                   <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-pick" />

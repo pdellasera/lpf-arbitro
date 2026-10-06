@@ -1,19 +1,18 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, Flag, Play, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import type { Match } from '@/features/matches/types'
 import { ACTIONS, type ActionKind } from '../data/actionConfig'
 import { LIVE_GRID, LIVE_TABS, type LiveTabId } from '../data/liveGrid'
 import { createLiveMatch } from '../data/mockLiveMatch'
 import { useLiveMatchState } from '../hooks/useLiveMatchState'
-import type { EventDraft, MatchPhase } from '../types'
+import type { EventDraft } from '../types'
+import { matchEndTime } from '../lib/acta'
 import { EventActionGrid } from './live/EventActionGrid'
-import { FinishHalfButton } from './live/FinishHalfButton'
 import { LiveScorePanel } from './live/LiveScorePanel'
 import { LiveTabBar } from './live/LiveTabBar'
 import { AlineacionesTab } from './live/LiveTabsContent'
 import { LiveTopBar } from './live/LiveTopBar'
 import { LogsSidebar } from './live/LogsSidebar'
-import { PauseMatchButton } from './live/PauseMatchButton'
 import { RegisterEventScreen } from './live/RegisterEventScreen'
 import { ActaDocumentScreen } from './acta/ActaDocumentScreen'
 import { ActaFinalizacionScreen } from './live/ActaFinalizacionScreen'
@@ -32,13 +31,14 @@ interface DrawerRequest {
 
 export function PortraitLiveMatchScreen({ match, onBack, onHome, autoStart = false }: PortraitLiveMatchScreenProps) {
   const [initial] = useState(() => createLiveMatch(match))
-  const { match: live, seconds, running, phase, recordEvent, startMatch, startSecondHalf, endHalf, toggleRunning } = useLiveMatchState(initial)
+  const { match: live, seconds, running, phase, recordEvent, startMatch, endHalf } = useLiveMatchState(initial)
 
   const [tab, setTab] = useState<LiveTabId>('events')
   const [drawer, setDrawer] = useState<DrawerRequest | null>(null)
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
   const [logsOpen, setLogsOpen] = useState(false)
   const [showDoc, setShowDoc] = useState(false)
+  const [showActa, setShowActa] = useState(false)
 
   // Al venir de "Iniciar partido" el cronómetro arranca al montar.
   useEffect(() => {
@@ -49,15 +49,10 @@ export function PortraitLiveMatchScreen({ match, onBack, onHome, autoStart = fal
   const minute = Math.floor(seconds / 60)
   const config = drawer ? ACTIONS[drawer.id] : ACTIONS.goal
 
-  // Botón de periodo: cambia de etiqueta/acción según la fase del partido.
-  const periodAction: Record<MatchPhase, { label: string; icon: LucideIcon; onClick: () => void; disabled?: boolean }> = {
-    pre: { label: 'Iniciar partido', icon: Play, onClick: startMatch },
-    first: { label: 'Finalizar primer tiempo', icon: Flag, onClick: () => endHalf(0) },
-    break: { label: 'Iniciar segunda parte', icon: Play, onClick: startSecondHalf },
-    second: { label: 'Finalizar Partido', icon: Flag, onClick: () => endHalf(0) },
-    ended: { label: 'Partido finalizado', icon: CheckCircle2, onClick: () => {}, disabled: true },
-  }
-  const current = periodAction[phase]
+  const ended = phase === 'ended'
+  const hasSecondHalf = live.periods.some((p) => p.half === 2)
+  const startTime = match.trailing
+  const endTime = ended ? matchEndTime(match.trailing, seconds, hasSecondHalf) : '--:--'
 
   function openDrawer(id: ActionKind, preset?: string) {
     setSelectedPlayerId(null)
@@ -76,8 +71,8 @@ export function PortraitLiveMatchScreen({ match, onBack, onHome, autoStart = fal
     else setTab(id)
   }
 
-  // Partido finalizado → pantalla de acta (firma) y, al cerrarla, documento PDF.
-  if (phase === 'ended') {
+  // Acta (firma): se abre al finalizar (árbitro) o con "Siguiente" (comisionado).
+  if (showActa) {
     return showDoc ? (
       <ActaDocumentScreen
         match={match}
@@ -90,7 +85,7 @@ export function PortraitLiveMatchScreen({ match, onBack, onHome, autoStart = fal
         match={match}
         live={live}
         seconds={seconds}
-        onBack={onBack}
+        onBack={() => setShowActa(false)}
         onClose={() => setShowDoc(true)}
       />
     )
@@ -105,10 +100,12 @@ export function PortraitLiveMatchScreen({ match, onBack, onHome, autoStart = fal
           home={live.home}
           away={live.away}
           score={live.score}
-          seconds={seconds}
           running={running}
           league={match.league}
           jornada={match.jornada}
+          ended={ended}
+          startTime={startTime}
+          endTime={endTime}
         />
 
         <LiveTabBar tabs={LIVE_TABS} active={tab} onChange={handleTabChange} />
@@ -122,8 +119,24 @@ export function PortraitLiveMatchScreen({ match, onBack, onHome, autoStart = fal
 
         <div className="sticky bottom-0 z-10 shrink-0 border-t border-line bg-page px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-6px_16px_rgba(15,23,42,0.05)]">
           <div className="flex gap-3">
-            <FinishHalfButton label={current.label} icon={current.icon} disabled={current.disabled} onClick={current.onClick} />
-            <PauseMatchButton running={running} onToggle={toggleRunning} />
+            <button
+              type="button"
+              data-live-back
+              onClick={onBack}
+              className="flex h-[56px] items-center justify-center gap-2 rounded-2xl bg-badge-gray px-6 text-[16px] font-bold text-ink transition-transform active:scale-95"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Volver
+            </button>
+            <button
+              type="button"
+              data-live-next
+              onClick={() => setShowActa(true)}
+              className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-2xl bg-brand text-[17px] font-extrabold text-white shadow-[0_10px_24px_rgba(0,98,253,0.32)] transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
+            >
+              Siguiente
+              <ArrowRight className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </main>
@@ -133,7 +146,6 @@ export function PortraitLiveMatchScreen({ match, onBack, onHome, autoStart = fal
         config={config}
         match={live}
         minute={minute}
-        seconds={seconds}
         selectedPlayerId={selectedPlayerId}
         presetOption={drawer?.preset}
         onSelectPlayer={setSelectedPlayerId}

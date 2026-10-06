@@ -2,16 +2,17 @@ import { cn } from '@/lib/cn'
 import { Crest } from '@/components/ui/Crest'
 import { LpfLogo } from '@/components/ui/LpfLogo'
 import type { Team } from '@/features/matches/types'
-import { formatClock } from '../../lib/formatClock'
 
 interface LiveScorePanelProps {
   home: Team
   away: Team
   score: { home: number; away: number }
-  seconds: number
   running: boolean
   league: string
   jornada: number
+  ended?: boolean
+  startTime?: string
+  endTime?: string
 }
 
 function TeamBlock({ team }: { team: Team }) {
@@ -23,7 +24,7 @@ function TeamBlock({ team }: { team: Team }) {
   )
 }
 
-export function LiveScorePanel({ home, away, score, seconds, running, league, jornada }: LiveScorePanelProps) {
+export function LiveScorePanel({ home, away, score, running, league, jornada, ended = false, startTime = '', endTime = '' }: LiveScorePanelProps) {
   return (
     <section className="bg-white px-5 pb-5 pt-6">
       {/* Liga + jornada · estado en vivo */}
@@ -50,12 +51,12 @@ export function LiveScorePanel({ home, away, score, seconds, running, league, jo
               running ? 'text-accent-green' : 'text-badge-gray-ink',
             )}
           >
-            {running ? 'En vivo' : 'En pausa'}
+            {ended ? 'Finalizado' : running ? 'En vivo' : 'En pausa'}
           </span>
         </span>
       </div>
 
-      {/* Marcador + reloj */}
+      {/* Marcador */}
       <div className="mt-6 flex items-center justify-between gap-3">
         <TeamBlock team={home} />
         <div className="flex flex-col items-center px-1">
@@ -65,12 +66,15 @@ export function LiveScorePanel({ home, away, score, seconds, running, league, jo
           >
             {score.home} – {score.away}
           </p>
-          <p data-clock className="mt-2 text-[20px] font-bold leading-none tabular-nums text-ink">
-            {formatClock(seconds)}
-          </p>
         </div>
         <TeamBlock team={away} />
       </div>
+
+      {/* Inicio - finalización del partido */}
+      <p data-live-end-times className="mt-4 border-t border-line pt-4 text-center text-[14px] font-semibold leading-tight text-ink-soft">
+        Inicio de partido <span className="font-bold text-ink">{startTime}</span> - Finalización de partido{' '}
+        <span className="font-bold text-ink">{endTime}</span>
+      </p>
     </section>
   )
 }

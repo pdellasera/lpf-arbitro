@@ -1,12 +1,10 @@
 import { Crest } from '@/components/ui/Crest'
 import type { Team } from '@/features/matches/types'
-import { formatClock } from '../../lib/formatClock'
 
 interface ScoreStripProps {
   home: Team
   away: Team
   score: { home: number; away: number }
-  seconds: number
 }
 
 function TeamCell({ team }: { team: Team }) {
@@ -19,7 +17,7 @@ function TeamCell({ team }: { team: Team }) {
 }
 
 /** Marcador compacto que encabeza las pantallas de registro (escu­dos + marcador + reloj). */
-export function ScoreStrip({ home, away, score, seconds }: ScoreStripProps) {
+export function ScoreStrip({ home, away, score }: ScoreStripProps) {
   return (
     <div className="flex items-center justify-between gap-3 px-5 pb-5 pt-5">
       <TeamCell team={home} />
@@ -29,9 +27,6 @@ export function ScoreStrip({ home, away, score, seconds }: ScoreStripProps) {
           className="text-[38px] font-extrabold leading-none tracking-tight tabular-nums text-ink"
         >
           {score.home} - {score.away}
-        </p>
-        <p className="mt-1.5 text-[18px] font-bold leading-none tabular-nums text-ink">
-          {formatClock(seconds)}
         </p>
       </div>
       <TeamCell team={away} />

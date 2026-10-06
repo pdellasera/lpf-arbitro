@@ -9,7 +9,7 @@ export interface LoginResult {
   user: {
     id: string
     name: string
-    role: string
+    role: 'arbitro' | 'comisionado'
   }
 }
 

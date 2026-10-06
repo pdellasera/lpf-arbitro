@@ -21,7 +21,7 @@ export function LoginScreen({ role = 'arbitro' }: LoginScreenProps) {
       <main className="relative z-10 mx-auto my-auto flex w-full max-w-[400px] flex-col px-5 safe-y sm:px-6 md:max-w-[440px]">
         <AuthHeader role={role} />
         <div className="mt-8 w-full md:mt-11">
-          <LoginCard />
+          <LoginCard role={role} />
         </div>
         <PwaDebugResetButton />
       </main>

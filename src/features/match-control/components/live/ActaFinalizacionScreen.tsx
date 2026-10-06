@@ -67,7 +67,7 @@ export function ActaFinalizacionScreen({
           </div>
         </div>
 
-        <div className="shrink-0 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+        <div className="sticky bottom-0 z-10 shrink-0 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
           <button
             type="button"
             data-acta-close

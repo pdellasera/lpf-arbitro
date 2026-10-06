@@ -5,7 +5,10 @@ import { RoleSelectScreen } from '@/features/auth/components/RoleSelectScreen'
 import { useSession } from '@/features/auth/SessionProvider'
 import { HomeScreen } from '@/features/matches/components/HomeScreen'
 import { MatchDetailScreen } from '@/features/matches/components/MatchDetailScreen'
+import { LoadLineupScreen } from '@/features/match-control/components/LoadLineupScreen'
 import { PortraitLiveMatchScreen } from '@/features/match-control/components/PortraitLiveMatchScreen'
+import { PreMatchChecklistScreen } from '@/features/commissioner/components/PreMatchChecklistScreen'
+import { MatchStartScreen } from '@/features/commissioner/components/MatchStartScreen'
 import { InstallModal } from '@/features/pwa/components/InstallModal'
 import { PwaDebugPanel } from '@/features/pwa/components/PwaDebugPanel'
 import { usePwaInstall } from '@/features/pwa/hooks/usePwaInstall'
@@ -13,10 +16,18 @@ import type { Match } from '@/features/matches/types'
 
 export default function App() {
   const { session } = useSession()
-  const [view, setView] = useState<'home' | 'detail' | 'match'>('home')
+  const [view, setView] = useState<'home' | 'pre' | 'start' | 'lineup' | 'detail' | 'match'>('home')
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
   const [appRole, setAppRole] = useState<'arbitro' | 'comisionado' | null>(null)
   const pwa = usePwaInstall()
+
+  // Rol efectivo: tras el login viene de la sesión (persistente); antes, de la
+  // selección en el selector de rol. Así el rol sobrevive a recargas de página.
+  const role: 'arbitro' | 'comisionado' = session
+    ? session.user.role === 'comisionado'
+      ? 'comisionado'
+      : 'arbitro'
+    : (appRole ?? 'arbitro')
 
   return (
     <>
@@ -25,20 +36,42 @@ export default function App() {
         {session ? (
           view === 'home' ? (
             <HomeScreen
-              role={appRole ?? 'arbitro'}
+              role={role}
               onOpenMatch={(match) => {
                 setSelectedMatch(match)
-                setView('detail')
+                // Comisionado: Lista Previa · Árbitro: Detalle del partido.
+                setView(role === 'comisionado' ? 'pre' : 'detail')
               }}
+            />
+          ) : view === 'pre' && selectedMatch ? (
+            <PreMatchChecklistScreen
+              onBack={() => setView('home')}
+              onNext={() => setView('start')}
+            />
+          ) : view === 'start' && selectedMatch ? (
+            <MatchStartScreen
+              onBack={() => setView('pre')}
+              onNext={() => setView('match')}
+            />
+          ) : view === 'lineup' && selectedMatch ? (
+            <LoadLineupScreen
+              match={selectedMatch}
+              onBack={() => setView('detail')}
+              onNext={() => setView('match')}
             />
           ) : view === 'detail' && selectedMatch ? (
             <MatchDetailScreen
               match={selectedMatch}
               onBack={() => setView('home')}
-              onStart={() => setView('match')}
+              onNext={() => setView('lineup')}
             />
           ) : selectedMatch ? (
-            <PortraitLiveMatchScreen match={selectedMatch} autoStart onBack={() => setView('detail')} onHome={() => setView('home')} />
+            <PortraitLiveMatchScreen
+              match={selectedMatch}
+              autoStart
+              onBack={() => setView(role === 'comisionado' ? 'start' : 'lineup')}
+              onHome={() => setView('home')}
+            />
           ) : null
         ) : appRole === null ? (
           <RoleSelectScreen onSelect={setAppRole} />

@@ -8,7 +8,7 @@ interface EditScreenTopBarProps {
 /** Cabecera oscura de las pantallas de registro (p. ej. "Registrar gol"). */
 export function EditScreenTopBar({ title, onBack }: EditScreenTopBarProps) {
   return (
-    <header className="relative flex shrink-0 items-center justify-center bg-gradient-to-b from-header-top to-header-bottom px-4 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))] shadow-[0_2px_10px_rgba(10,28,52,0.3)]">
+    <header className="relative sticky top-0 z-30 flex shrink-0 items-center justify-center bg-gradient-to-b from-header-top to-header-bottom px-4 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))] shadow-[0_2px_10px_rgba(10,28,52,0.3)]">
       <button
         type="button"
         onClick={onBack}

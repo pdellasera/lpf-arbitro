@@ -129,7 +129,7 @@ export function ActaDocumentScreen({ match, live, onBack, onHome }: ActaDocument
       data-acta-doc
       className="acta-print-root app-h relative mx-auto flex w-full max-w-[430px] flex-col bg-header-bottom"
     >
-      <header className="no-print shrink-0 bg-gradient-to-b from-header-top to-header-bottom">
+      <header className="no-print sticky top-0 z-30 shrink-0 bg-gradient-to-b from-header-top to-header-bottom">
         <div className="relative flex items-center px-4 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))]">
           <button
             type="button"

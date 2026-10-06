@@ -1,4 +1,4 @@
-import { ArrowLeft, ClipboardList, MapPin, User, UserRound, Users, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ClipboardList, MapPin, User, UserRound, Users, type LucideIcon } from 'lucide-react'
 import { Crest } from '@/components/ui/Crest'
 import { LpfLogo } from '@/components/ui/LpfLogo'
 import { formatLongDate } from '../lib/formatDate'
@@ -9,7 +9,7 @@ import { RefereeRow } from './RefereeRow'
 interface MatchDetailScreenProps {
   match: Match
   onBack: () => void
-  onStart: () => void
+  onNext: () => void
 }
 
 const REF_ICONS: LucideIcon[] = [User, ClipboardList, Users, UserRound]
@@ -23,7 +23,7 @@ function TeamBlock({ team }: { team: Team }) {
   )
 }
 
-export function MatchDetailScreen({ match, onBack, onStart }: MatchDetailScreenProps) {
+export function MatchDetailScreen({ match, onBack, onNext }: MatchDetailScreenProps) {
   const referees = match.referees ?? []
   const city = match.city ?? match.home.country
 
@@ -99,16 +99,27 @@ export function MatchDetailScreen({ match, onBack, onStart }: MatchDetailScreenP
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="sticky bottom-0 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-          <button
-            type="button"
-            data-start-match
-            onClick={onStart}
-            className="w-full rounded-2xl bg-day-active py-4 text-[17px] font-extrabold text-ink shadow-[0_10px_24px_rgba(9,30,66,0.14)] transition-transform active:scale-[0.99]"
-          >
-            Iniciar partido
-          </button>
+        {/* Footer */}
+        <div className="sticky bottom-0 z-10 shrink-0 border-t border-line bg-white px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex h-[56px] items-center justify-center gap-2 rounded-2xl bg-badge-gray px-6 text-[16px] font-bold text-ink transition-transform active:scale-95"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Volver
+            </button>
+            <button
+              type="button"
+              data-detail-next
+              onClick={onNext}
+              className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-2xl bg-brand text-[17px] font-extrabold text-white shadow-[0_10px_24px_rgba(0,98,253,0.32)] transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
+            >
+              Siguiente
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </main>
     </div>

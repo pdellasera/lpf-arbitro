@@ -7,7 +7,7 @@ interface ActaTopBarProps {
 /** Cabecera navy de la pantalla "Acta de finalización" (título + subtítulo). */
 export function ActaTopBar({ onBack }: ActaTopBarProps) {
   return (
-    <header className="relative shrink-0 bg-gradient-to-b from-header-top to-header-bottom px-4 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))]">
+    <header className="relative sticky top-0 z-30 shrink-0 bg-gradient-to-b from-header-top to-header-bottom px-4 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))]">
       <button
         type="button"
         onClick={onBack}

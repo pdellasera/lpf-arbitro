@@ -35,7 +35,9 @@ export function AppDrawer({ open, onClose }: AppDrawerProps) {
                 </span>
                 <div>
                   <p className="text-[15px] font-bold text-ink">{session?.user.name ?? 'Árbitro LPF'}</p>
-                  <p className="text-[12px] text-ink-soft">Árbitro LPF</p>
+                  <p className="text-[12px] text-ink-soft">
+                    {session?.user.role === 'comisionado' ? 'Comisionado LPF' : 'Árbitro LPF'}
+                  </p>
                 </div>
               </div>
               <button

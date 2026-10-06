@@ -16,8 +16,13 @@ interface FieldErrors {
   password?: string
 }
 
-export function LoginCard() {
-  const [email, setEmail] = useState('arbitro@lpf.com')
+interface LoginCardProps {
+  role?: 'arbitro' | 'comisionado'
+}
+
+export function LoginCard({ role = 'arbitro' }: LoginCardProps) {
+  const demoEmail = role === 'comisionado' ? 'comisionado@lpf.com' : 'arbitro@lpf.com'
+  const [email, setEmail] = useState(demoEmail)
   const [password, setPassword] = useState('123456')
   const [remember, setRemember] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
@@ -69,7 +74,7 @@ export function LoginCard() {
 
       <div className="mb-5 flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
         <span className="text-[11px] text-white/50">Cuenta demo</span>
-        <span className="ml-1 text-[12px] font-semibold text-white">arbitro@lpf.com</span>
+        <span className="ml-1 text-[12px] font-semibold text-white">{demoEmail}</span>
         <span className="text-white/30">·</span>
         <span className="text-[12px] font-semibold text-white">123456</span>
       </div>

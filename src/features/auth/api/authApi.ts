@@ -8,6 +8,11 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
  * Autentica al usuario. Si VITE_API_URL está definido llama al backend real;
  * en caso contrario usa un mock local para desarrollo.
  */
+const DEMO_ACCOUNTS: Record<string, { password: string; name: string; role: 'arbitro' | 'comisionado' }> = {
+  'arbitro@lpf.com': { password: '123456', name: 'Árbitro LPF', role: 'arbitro' },
+  'comisionado@lpf.com': { password: '123456', name: 'Comisionado LPF', role: 'comisionado' },
+}
+
 export async function login(credentials: LoginCredentials): Promise<LoginResult> {
   if (API_URL) {
     const res = await fetch(`${API_URL}/auth/login`, {
@@ -21,15 +26,16 @@ export async function login(credentials: LoginCredentials): Promise<LoginResult>
     return (await res.json()) as LoginResult
   }
 
-  // Mock de desarrollo
+  // Mock de desarrollo: una cuenta demo por rol.
   await delay(1100)
   const email = credentials.email.trim().toLowerCase()
-  if (email !== 'arbitro@lpf.com' || credentials.password !== '123456') {
+  const account = DEMO_ACCOUNTS[email]
+  if (!account || credentials.password !== account.password) {
     throw new Error('Correo o contraseña incorrectos')
   }
   return {
     token: 'mock-token',
-    user: { id: '1', name: 'Árbitro LPF', role: 'referee' },
+    user: { id: email === 'arbitro@lpf.com' ? '1' : '2', name: account.name, role: account.role },
   }
 }
 

@@ -3,7 +3,7 @@
 PWA instalable de la **Liga Panameña de Fútbol** para el informe digital del árbitro:
 login, listado de partidos del día (**Home**), **Detalle del partido** (confirmación previa al
 inicio) e informe en vivo vertical con marcador, pestañas y acciones rápidas
-(**Partido en vivo**). Construida con
+(**Registro de partido**). Construida con
 **React 19 + Vite + TypeScript + TailwindCSS v4 + framer-motion + React Query + lucide-react**.
 
 La UI se reconstruyó a partir de análisis de píxeles de los assets del mockup
@@ -202,6 +202,10 @@ src/
 ├─ features/matches/            HomeScreen, MatchCard, BottomNav, DaySelector,
 │                               MatchDetailScreen, MatchDetailHeader, RefereeRow,
 │                               useMatches, mockMatches (listado + detalle del día)
+├─ features/commissioner/        PreMatchChecklistScreen, MatchStartScreen,
+│                               MatchStartTopBar, KickoffCard, DelaysCard,
+│                               preMatchChecklist, matchStartDelays
+│                               (Lista Previa + Inicio del partido)
 ├─ features/match-control/      PortraitLiveMatchScreen, LiveTopBar, LiveScorePanel,
 │                               LiveTabBar, EventActionGrid, LiveTabsContent,
 │                               RegisterEventScreen, useLiveMatchState (informe en vivo)
@@ -231,8 +235,13 @@ tools/legacy/                   measure-*.ps1, read-*.ps1, ocr-home.ps1 (anális
 
 ## Credenciales demo (mock)
 
-- Correo: `arbitro@lpf.com`
-- Contraseña: `123456`
+- Árbitro: `arbitro@lpf.com` / `123456`
+- Comisionado: `comisionado@lpf.com` / `123456`
+
+Al elegir "App Comisionado" en el selector de rol, el login se precarga con la cuenta del
+comisionado; el mock devuelve el rol correspondiente y la app persiste ese rol en la sesión
+(`session.user.role`), de modo que sobrevive a recargas y activa el flujo del comisionado
+(card → Lista Previa) en lugar del flujo del árbitro.
 
 Para conectar un backend real, define `VITE_API_URL` (ver `.env.example`).
 
@@ -254,15 +263,64 @@ Para conectar un backend real, define `VITE_API_URL` (ver `.env.example`).
   `overscroll-behavior: none`, `touch-action: manipulation`, inputs ≥16px (evita el zoom de
   iOS al enfocar) y `interactive-widget=resizes-content` (el teclado no tapa el botón).
 
-## Partido en vivo — panel vertical
+## Lista Previa (Comisionado)
 
-Tras "Iniciar partido" se abre una pantalla **100% vertical** (sin rotación) compuesta por:
+En el rol **Comisionado**, al tocar la card de un partido la primera pantalla que se abre es la
+**"Antes del partido"** (`features/commissioner/`), un clon del mockup de la LPF:
 
-- **Cabecera oscura** (`LiveTopBar.tsx`): Volver · "Partido en vivo" · campana, sobre el
+- **Cabecera navy** (`PreMatchTopBar.tsx`): flecha atrás (vuelve al inicio) y el título centrado
+  "Antes del partido" sobre el gradiente `header-top → header-bottom`.
+- **Cuerpo** sobre `bg-page` con `rounded-t-[28px]`: título grande "Antes del partido", subtítulo
+  "Revisión de instalaciones y seguridad…", pill verde **"✓ Verificado en sitio"**
+  (`bg-accent-green-soft` + `text-accent-green`) y una tarjeta blanca con las filas del checklist
+  (tile verde + título + subtítulo + link "Cambiar"):
+  Similitud de uniformes · Estado del terreno · Alumbrado · Recoge balones ·
+  Seguridad (Policía) · Protección Civil · Ambulancias.
+- **Interacción**: tocar una fila (o "Cambiar") cicla el valor de ese ítem y actualiza el subtítulo.
+- **Footer sticky** (`bg-white`, safe-area): botón cuadrado "volver" (`bg-badge-gray`) a la
+  izquierda y CTA **"Siguiente →"** azul (`bg-brand`) a la derecha, que abre la siguiente pantalla
+  del flujo Comisionado (**Inicio del partido**).
+
+Los textos del checklist (etiquetas y opciones) están centralizados en
+`data/preMatchChecklist.ts` para ajustarlos al mockup oficial sin tocar la UI.
+
+## Inicio del partido (Comisionado)
+
+Al pulsar **"Siguiente →"** en la Lista Previa se abre **"Inicio del partido"**
+(`features/commissioner/MatchStartScreen.tsx`):
+
+- **Cabecera navy** (`MatchStartTopBar.tsx`): flecha atrás y el título **"Inicio del partido"**
+  **alineado a la izquierda** (a diferencia de las cabeceras centradas).
+- **Cuerpo** sobre `bg-page` con `rounded-t-[28px]` (el mismo patrón que el resto de pantallas):
+  **"Pitazo inicial"** y **"Pitazo final"** lado a lado (`KickoffCard.tsx`, cada uno con `--:--`,
+  "Hora real de inicio/finalización" y botón "Registrar" que rellena la hora), debajo
+  **"Tiempo extra por periodo"** (steppers "Primer tiempo" / "Segundo tiempo") y
+  **"Retrasos durante el partido"** (`DelaysCard.tsx`, tres preguntas Sí/No — "No" por defecto).
+- **Footer sticky**: **"Volver"** (gris, vuelve a la Lista Previa) y **"Siguiente →"** (azul,
+  abre el **Registro de partido**).
+
+Los textos de los retrasos están centralizados en `data/matchStartDelays.ts`.
+
+## Cargar alineaciones (Árbitro)
+
+Tras el **"Detalle del partido"**, el rol **Árbitro** abre **"Cargar alineaciones"**
+(`features/match-control/LoadLineupScreen.tsx`):
+
+- **Cabecera navy** (sticky): flecha atrás (vuelve al Detalle) y el título **"Cargar alineaciones"**.
+- **Cuerpo** sobre `bg-page` con `rounded-t-[28px]`: para cada equipo, **Titulares** (máx. 11) y
+  **Suplentes** (máx. 7) con un botón **"Agregar jugador"** que añade una fila editable
+  (**Dorsal**, **Nombre**, **Posición**).
+- **Footer sticky**: **"Volver"** (gris, vuelve al Detalle) y **"Siguiente →"** (azul, abre el
+  **Registro de partido**).
+
+## Registro de partido — panel vertical
+
+Tras "Siguiente" en "Cargar alineaciones" se abre una pantalla **100% vertical** (sin rotación) compuesta por:
+
+- **Cabecera oscura** (`LiveTopBar.tsx`): Volver · "Registro de partido" · campana, sobre el
   gradiente `header-top → header-bottom`.
 - **Panel de marcador** (`LiveScorePanel.tsx`, fondo blanco): liga + jornada con el escudo LPF,
-  pill "EN VIVO" (verde) / "EN PAUSA", y el marcador grande `0 – 0` con el cronómetro `mm:ss`
-  debajo.
+  pill "EN VIVO" (verde) / "EN PAUSA", y el marcador grande `0 – 0`.
 - **Pestañas** (`LiveTabBar.tsx`): Eventos · Alineaciones · Logs. La activa se marca con
   icono + etiqueta en azul y un subrayado inferior.
 - **Grid de acciones** (`EventActionGrid.tsx`, en "Eventos"): Gol · Tarjeta amarilla ·
@@ -272,15 +330,14 @@ Tras "Iniciar partido" se abre una pantalla **100% vertical** (sin rotación) co
 - **Alineaciones** (`LiveTabsContent.tsx`): titulares por equipo (local/visitante).
 - **Logs** (`LogsSidebar.tsx`): al tocar la pestaña "Logs" se abre un **sidebar lateral**
   con el historial de eventos e incidencias registradas.
-- **CTA inferior** (footer fijo/sticky, dos botones en línea): `FinishHalfButton.tsx` —
-  "Iniciar partido" / "Finalizar primer tiempo" / "Iniciar segunda parte" / "Finalizar
-  Partido" / "Partido finalizado" según la fase del partido (blanco con borde navy + icono),
-  y `PauseMatchButton.tsx` — "Pausar partido" / "Reanudar partido" (azul + icono). El footer
-  queda anclado abajo (`sticky bottom-0`) mientras el contenido central hace scroll.
+- **Footer sticky** (abajo, dos botones en línea): **"Volver"** (gris) y **"Siguiente →"** (azul).
+  Es la misma pantalla para **Árbitro** y **Comisionado**; "Siguiente" abre el **Acta**.
+- **Inicio - finalización**: debajo del marcador siempre se muestra
+  **"Inicio de partido {hora} - Finalización de partido {hora}"** (con `--:--` hasta finalizar).
 
 La **pantalla de registro** (`live/RegisterEventScreen.tsx`) se abre a **pantalla completa**
 (overlay `fixed inset-0` con barra oscura "Registrar …" con campana + hoja blanca de esquinas redondeadas)
-y conserva el flujo de registro completo (bando, jugador, opciones, observaciones y CTA amarillo
+y conserva el flujo de registro completo (minuto, bando, jugador, opciones, observaciones y CTA amarillo
 "Guardar …"). Para el gol muestra: franja de marcador compacta, selector de jugador, segmentado
 "Juego abierto · Penal · Tiro libre", "Observaciones (opcional)" y "Guardar gol". Para la tarjeta
 muestra las tarjetas de tipo con icono (`Amarilla`/`Roja`, `CardTypeOptions.tsx`), un input de

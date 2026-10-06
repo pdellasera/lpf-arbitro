@@ -1,7 +1,7 @@
 export interface SessionUser {
   id: string
   name: string
-  role: string
+  role: 'arbitro' | 'comisionado'
 }
 
 export interface Session {
