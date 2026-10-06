@@ -1,4 +1,4 @@
-import { CalendarDays, ChartColumn, FileText, House, UserRound, type LucideIcon } from 'lucide-react'
+import { Bell, CalendarDays, House, UserRound, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 interface NavItem {
@@ -6,30 +6,45 @@ interface NavItem {
   label: string
   icon: LucideIcon
   active?: boolean
+  badge?: boolean
+  onClick?: () => void
 }
 
-const ITEMS: NavItem[] = [
-  { id: 'matches', label: 'Mis partidos', icon: House, active: true },
-  { id: 'reports', label: 'Informes', icon: FileText },
-  { id: 'stats', label: 'Estadísticas', icon: ChartColumn },
-  { id: 'calendar', label: 'Calendario', icon: CalendarDays },
-  { id: 'profile', label: 'Perfil', icon: UserRound },
-]
+interface BottomNavProps {
+  onProfile?: () => void
+}
 
-export function BottomNav() {
+export function BottomNav({ onProfile }: BottomNavProps) {
+  const items: NavItem[] = [
+    { id: 'home', label: 'Inicio', icon: House, active: true },
+    { id: 'matches', label: 'Mis partidos', icon: CalendarDays },
+    { id: 'notifications', label: 'Notificaciones', icon: Bell, badge: true },
+    { id: 'profile', label: 'Perfil', icon: UserRound, onClick: onProfile },
+  ]
+
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[430px] border-t border-[#eceef2] bg-white pb-[max(0.4rem,env(safe-area-inset-bottom))]">
+    <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[430px] border-t border-line bg-white pb-[max(0.4rem,env(safe-area-inset-bottom))]">
       <div className="flex">
-        {ITEMS.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon
           return (
-            <button key={item.id} type="button" className="flex flex-1 flex-col items-center gap-1 pt-2.5">
-              <Icon
-                className={cn('h-[22px] w-[22px]', item.active ? 'text-[#0062fd]' : 'text-ink-mute')}
-                fill={item.active ? 'currentColor' : 'none'}
-                strokeWidth={2}
-              />
-              <span className={cn('text-[10px] font-medium leading-none', item.active ? 'text-[#0062fd]' : 'text-ink-mute')}>
+            <button
+              key={item.id}
+              type="button"
+              onClick={item.onClick}
+              className="flex flex-1 flex-col items-center gap-1 pt-2.5"
+            >
+              <span className="relative">
+                <Icon
+                  className={cn('h-[22px] w-[22px]', item.active ? 'text-brand' : 'text-ink-mute')}
+                  fill={item.active ? 'currentColor' : 'none'}
+                  strokeWidth={2}
+                />
+                {item.badge && (
+                  <span className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-[#ef4444] ring-2 ring-white" />
+                )}
+              </span>
+              <span className={cn('text-[10px] font-medium leading-none', item.active ? 'text-brand' : 'text-ink-mute')}>
                 {item.label}
               </span>
             </button>

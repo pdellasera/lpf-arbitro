@@ -24,7 +24,8 @@ export function useLiveMatchState(initial: LiveMatch) {
         side: draft.side,
         player: draft.player,
         playerId: draft.playerId,
-        label: draft.option ?? draft.note,
+        label: draft.reason ?? draft.option ?? draft.note,
+        reason: draft.reason,
       }
       const score =
         draft.kind === 'goal' && (draft.side === 'home' || draft.side === 'away')

@@ -1,50 +1,51 @@
 import { useState } from 'react'
-import { useAllMatches } from '../hooks/useMatches'
+import { useMatchesByDay, useMatchDays } from '../hooks/useMatches'
 import type { Match } from '../types'
 import { AppDrawer } from './AppDrawer'
 import { BottomNav } from './BottomNav'
-import { HomeHero } from './HomeHero'
+import { DaySelector } from './DaySelector'
+import { HomeHeader } from './HomeHeader'
 import { MatchCard } from './MatchCard'
 import { MatchesEmptyState } from './MatchesEmptyState'
 
 interface HomeScreenProps {
+  role: 'arbitro' | 'comisionado'
   onOpenMatch: (match: Match) => void
 }
 
-export function HomeScreen({ onOpenMatch }: HomeScreenProps) {
+export function HomeScreen({ role, onOpenMatch }: HomeScreenProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const schedule = useAllMatches()
+  const [selected, setSelected] = useState<string | null>(null)
 
-  const days = schedule.data ?? []
+  const daysQuery = useMatchDays()
+  const days = daysQuery.data ?? []
+  const activeDay = selected ?? days[0]?.date ?? ''
+
+  const matchesQuery = useMatchesByDay(activeDay)
+  const matches = matchesQuery.data ?? []
 
   return (
-    <div className="app-h relative mx-auto flex w-full max-w-[430px] flex-col bg-page">
-      <HomeHero onMenu={() => setDrawerOpen(true)} />
+    <div className="app-h relative mx-auto flex w-full max-w-[430px] flex-col bg-header-bottom">
+      <HomeHeader role={role} />
 
-      <main className="relative z-10 -mt-6 flex-1 rounded-t-[24px] bg-page">
-        <div className="flex flex-col gap-5 px-3 pb-28 pt-4">
-          {days.map(({ day, matches }) => (
-            <section key={day.date}>
-              <div className="sticky top-0 z-10 -mx-3 mb-3 flex items-baseline justify-between bg-page px-4 py-2.5">
-                <h2 className="text-[16px] font-extrabold leading-none text-ink">{day.label}</h2>
-                <span className="text-[12px] text-ink-mute">{day.sublabel}</span>
-              </div>
-              <div className="flex flex-col gap-3">
-                {matches.map((match) => (
-                  <MatchCard
-                    key={match.id}
-                    match={match}
-                    onOpen={match.status === 'upcoming' ? () => onOpenMatch(match) : undefined}
-                  />
-                ))}
-              </div>
-            </section>
+      <main className="flex-1 rounded-t-[28px] bg-page">
+        <div className="px-4 pt-5">
+          <h1 className="text-[28px] font-extrabold leading-none tracking-tight text-ink">Mis partidos</h1>
+        </div>
+
+        <div className="mt-4">
+          <DaySelector days={days} selected={activeDay} onSelect={setSelected} />
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 px-4 pb-28">
+          {matches.map((match) => (
+            <MatchCard key={match.id} match={match} onOpen={() => onOpenMatch(match)} />
           ))}
-          {!schedule.isLoading && days.length === 0 && <MatchesEmptyState />}
+          {!matchesQuery.isLoading && matches.length === 0 && <MatchesEmptyState />}
         </div>
       </main>
 
-      <BottomNav />
+      <BottomNav onProfile={() => setDrawerOpen(true)} />
       <AppDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   )

@@ -1,20 +1,20 @@
+import { Clock } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import type { MatchStatus } from '../types'
 
 interface StatusBadgeProps {
   label: string
-  status: MatchStatus
+  green?: boolean
 }
 
-export function StatusBadge({ label, status }: StatusBadgeProps) {
-  const finished = status === 'finished'
+export function StatusBadge({ label, green = false }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em]',
-        finished ? 'bg-[#eef0f3] text-[#6b7280]' : 'bg-[#e7f8f0] text-[#05b56b]',
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold',
+        green ? 'bg-accent-green-soft text-accent-green' : 'bg-badge-gray text-badge-gray-ink',
       )}
     >
+      {green && <Clock className="h-3.5 w-3.5" />}
       {label}
     </span>
   )

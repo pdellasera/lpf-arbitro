@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { DesktopNotice } from '@/features/auth/components/DesktopNotice'
 import { LoginScreen } from '@/features/auth/components/LoginScreen'
+import { RoleSelectScreen } from '@/features/auth/components/RoleSelectScreen'
 import { useSession } from '@/features/auth/SessionProvider'
 import { HomeScreen } from '@/features/matches/components/HomeScreen'
-import { LiveMatchScreen } from '@/features/match-control/components/LiveMatchScreen'
+import { MatchDetailScreen } from '@/features/matches/components/MatchDetailScreen'
+import { PortraitLiveMatchScreen } from '@/features/match-control/components/PortraitLiveMatchScreen'
 import { InstallModal } from '@/features/pwa/components/InstallModal'
 import { PwaDebugPanel } from '@/features/pwa/components/PwaDebugPanel'
 import { usePwaInstall } from '@/features/pwa/hooks/usePwaInstall'
@@ -11,8 +13,9 @@ import type { Match } from '@/features/matches/types'
 
 export default function App() {
   const { session } = useSession()
-  const [view, setView] = useState<'home' | 'match'>('home')
+  const [view, setView] = useState<'home' | 'detail' | 'match'>('home')
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
+  const [appRole, setAppRole] = useState<'arbitro' | 'comisionado' | null>(null)
   const pwa = usePwaInstall()
 
   return (
@@ -22,16 +25,25 @@ export default function App() {
         {session ? (
           view === 'home' ? (
             <HomeScreen
+              role={appRole ?? 'arbitro'}
               onOpenMatch={(match) => {
                 setSelectedMatch(match)
-                setView('match')
+                setView('detail')
               }}
             />
+          ) : view === 'detail' && selectedMatch ? (
+            <MatchDetailScreen
+              match={selectedMatch}
+              onBack={() => setView('home')}
+              onStart={() => setView('match')}
+            />
           ) : selectedMatch ? (
-            <LiveMatchScreen match={selectedMatch} onBack={() => setView('home')} />
+            <PortraitLiveMatchScreen match={selectedMatch} autoStart onBack={() => setView('detail')} onHome={() => setView('home')} />
           ) : null
+        ) : appRole === null ? (
+          <RoleSelectScreen onSelect={setAppRole} />
         ) : (
-          <LoginScreen />
+          <LoginScreen role={appRole} />
         )}
 
         {/* Modal de instalación sobre el Login (Android: instalador nativo · iOS: instrucciones). */}

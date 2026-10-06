@@ -44,6 +44,8 @@ export interface TimelineEvent {
   /** Id del jugador implicado (para flagear amonestados sobre la cancha). */
   playerId?: string
   label?: string
+  /** Motivo escrito por el árbitro (p. ej. motivo de la tarjeta). */
+  reason?: string
 }
 
 export type MatchPhase = 'pre' | 'first' | 'break' | 'second' | 'ended'
@@ -78,6 +80,7 @@ export interface EventDraft {
   secondaryPlayerId?: string
   minute: number
   option?: string
+  reason?: string
   note?: string
   addedMinutes?: number
 }

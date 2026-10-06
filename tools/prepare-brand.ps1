@@ -19,5 +19,11 @@ $filter = 'crop=208:249:19:126,format=rgb24,colorkey=0xFFFFFF:0.25:0.05,format=r
 & $ffmpeg -hide_banner -loglevel error -y -i $logo -vf $filter -c:v libwebp -lossless 1 "$srcAssets\logo-lpf.webp"
 if ($LASTEXITCODE -ne 0) { throw 'ffmpeg logo-lpf.webp falló' }
 
+# Variante en tinta oscura (#0b1220) para el documento "INFORME DEL ÁRBITRO" sobre hoja
+# blanca: misma águila recortada, pero pintada de negro azulado (contraste sobre blanco).
+$inkFilter = 'crop=208:249:19:126,format=rgb24,colorkey=0xFFFFFF:0.25:0.05,format=rgba,lutrgb=r=11:g=18:b=32'
+& $ffmpeg -hide_banner -loglevel error -y -i $logo -vf $inkFilter -c:v libwebp -lossless 1 "$srcAssets\lpf-ink.webp"
+if ($LASTEXITCODE -ne 0) { throw 'ffmpeg lpf-ink.webp falló' }
+
 Write-Host '=== src/assets ==='
 Get-ChildItem $srcAssets | Select-Object Name, Length | Format-Table -AutoSize

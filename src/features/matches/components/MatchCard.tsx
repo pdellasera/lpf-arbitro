@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion'
-import { ChevronRight, Clock } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { Match } from '../types'
-import { MatchMeta } from './MatchMeta'
+import { MatchInfo } from './MatchInfo'
 import { StatusBadge } from './StatusBadge'
 import { TeamRow } from './TeamRow'
 
@@ -12,8 +12,9 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ match, onOpen }: MatchCardProps) {
-  const upcoming = match.status === 'upcoming'
+  const featured = Boolean(match.featured)
   const live = match.status === 'live'
+  const emphasized = featured || live
 
   return (
     <motion.article
@@ -21,45 +22,40 @@ export function MatchCard({ match, onOpen }: MatchCardProps) {
       animate={{ opacity: 1, y: 0 }}
       onClick={onOpen}
       className={cn(
-        'rounded-2xl border',
-        upcoming ? 'border-[#0062fd] bg-[#eef4fe]' : 'border-[#eceef2] bg-white',
+        'relative rounded-2xl border border-line bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]',
         onOpen && 'cursor-pointer transition-transform active:scale-[0.99]',
       )}
     >
-      <header className="flex items-center justify-between px-4 pt-3.5">
-        <StatusBadge label={match.badge} status={match.status} />
+      {featured && <span className="absolute inset-y-1.5 left-0 w-[5px] rounded-full bg-accent-green" />}
 
-        <div className="flex items-center gap-1">
-          {live ? (
-            <>
-              <span className="h-1.5 w-1.5 rounded-full bg-[#05b56b]" />
-              <span className="text-[14px] font-bold text-[#05b56b]">{match.trailing}</span>
-            </>
-          ) : (
-            <>
-              <Clock className={cn('h-4 w-4', upcoming ? 'text-[#0062fd]' : 'text-ink-mute')} />
-              <span className={cn('text-[15px] font-bold tabular-nums', upcoming ? 'text-[#0062fd]' : 'text-ink-soft')}>
-                {match.trailing}
-              </span>
-            </>
-          )}
-          <ChevronRight className={cn('h-4 w-4', upcoming ? 'text-[#0062fd]' : 'text-ink-mute')} />
-        </div>
-      </header>
+      <div className="px-4 py-3.5">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            {live && <span className="h-1.5 w-1.5 rounded-full bg-accent-green" />}
+            <span
+              className={cn(
+                'text-[20px] font-extrabold leading-none tabular-nums',
+                emphasized ? 'text-accent-green' : 'text-ink',
+              )}
+            >
+              {match.trailing}
+            </span>
+          </div>
+          <StatusBadge label={match.badge} green={emphasized} />
+        </header>
 
-      <div className="px-4 pb-4 pt-2.5">
-        <p className="text-[12.5px] text-ink-soft">
-          {match.league} <span className="text-ink-mute">·</span> Jornada {match.jornada}
-        </p>
-
-        <div className="mt-3.5">
+        <div className="mt-4">
           <TeamRow home={match.home} away={match.away} score={match.score} />
         </div>
 
-        <div className="my-3.5 h-px bg-[#eceef2]" />
-
-        <MatchMeta items={match.meta} />
+        <div className="mt-3.5">
+          <MatchInfo venue={match.venue} jornada={match.jornada} />
+        </div>
       </div>
+
+      {!featured && (
+        <ChevronRight className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-mute" />
+      )}
     </motion.article>
   )
 }

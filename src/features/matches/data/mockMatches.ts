@@ -1,4 +1,4 @@
-import type { Match, MatchDay } from '../types'
+import type { Match, MatchDay, RefereeAssignment } from '../types'
 import cai from '@/assets/crests/cai.webp'
 import plaza from '@/assets/crests/plaza-amador.webp'
 import tauro from '@/assets/crests/tauro.webp'
@@ -11,137 +11,139 @@ import veraguas from '@/assets/crests/veraguas.webp'
 import arabeUnido from '@/assets/crests/arabe-unido.webp'
 
 // Fecha "hoy" fija para que textos y horas coincidan exactamente con el mockup.
-export const TODAY = '2026-09-28'
+export const TODAY = '2025-09-28'
+
+const LEAGUE = 'Liga Panameña'
 
 export const MATCH_DAYS: MatchDay[] = [
-  { date: '2026-09-28', label: 'Hoy', sublabel: '28 sep' },
-  { date: '2026-09-29', label: 'Mañana', sublabel: '29 sep' },
-  { date: '2026-09-30', label: 'Mar, 30', sublabel: '30 sep' },
-  { date: '2026-10-01', label: 'Mié, 1', sublabel: '1 oct' },
-  { date: '2026-10-02', label: 'Jue, 2', sublabel: '2 oct' },
+  { date: '2025-09-28', label: 'Hoy', sublabel: '28 sep' },
+  { date: '2025-09-29', label: 'Mañana', sublabel: '29 sep' },
+  { date: '2025-10-03', label: 'Vie', sublabel: '3 oct' },
 ]
 
 export const MATCHES_BY_DAY: Record<string, Match[]> = {
-  '2026-09-28': [
+  '2025-09-28': [
     {
       id: 'm1',
       status: 'upcoming',
       badge: 'PRÓXIMO A INICIAR',
-      league: 'Liga Panameña de Fútbol',
+      league: LEAGUE,
       jornada: 12,
+      venue: 'Estadio Rommel Fernández',
+      featured: true,
       home: { name: 'CAI', country: 'Panamá', crest: cai },
       away: { name: 'Plaza Amador', country: 'Panamá', crest: plaza },
       score: null,
       trailing: '19:00',
-      meta: [
-        { icon: 'castle', label: 'Estadio Rommel Fernández' },
-        { icon: 'whistle', label: 'Árbitro central' },
-        { icon: 'file', label: 'Informe digital' },
-      ],
     },
-  ],
-  '2026-09-29': [
+    {
+      id: 'm2',
+      status: 'finished',
+      badge: 'Finalizado',
+      league: LEAGUE,
+      jornada: 12,
+      venue: 'Estadio Agustín Muquita Sánchez',
+      home: { name: 'Tauro FC', country: 'Panamá', crest: tauro },
+      away: { name: 'San Francisco', country: 'Panamá', crest: sanFrancisco },
+      score: null,
+      trailing: '16:00',
+    },
+    {
+      id: 'm3',
+      status: 'finished',
+      badge: 'Reportado',
+      league: LEAGUE,
+      jornada: 12,
+      venue: 'Estadio Maracaná de Colón',
+      home: { name: 'CD Universitario', country: 'Panamá', crest: cdu },
+      away: { name: 'UMECIT FC', country: 'Panamá', crest: umecit },
+      score: null,
+      trailing: '14:00',
+    },
     {
       id: 'm4',
       status: 'upcoming',
-      badge: 'PRÓXIMO A INICIAR',
-      league: 'Liga Panameña de Fútbol',
+      badge: 'Programado',
+      league: LEAGUE,
+      jornada: 12,
+      venue: 'Estadio Los Milagros',
+      home: { name: 'Herrera FC', country: 'Panamá', crest: herrera },
+      away: { name: 'Veraguas United', country: 'Panamá', crest: veraguas },
+      score: null,
+      trailing: '11:00',
+    },
+  ],
+  '2025-09-29': [
+    {
+      id: 'm5',
+      status: 'upcoming',
+      badge: 'Programado',
+      league: LEAGUE,
       jornada: 13,
+      venue: 'Estadio Rommel Fernández',
       home: { name: 'CD Universitario', country: 'Panamá', crest: cdu },
       away: { name: 'Sporting SM', country: 'Panamá', crest: sporting },
       score: null,
       trailing: '15:30',
-      meta: [
-        { icon: 'castle', label: 'Estadio Rommel Fernández' },
-        { icon: 'whistle', label: 'Árbitro central' },
-        { icon: 'file', label: 'Informe digital' },
-      ],
     },
     {
-      id: 'm5',
+      id: 'm6',
       status: 'upcoming',
-      badge: 'PRÓXIMO A INICIAR',
-      league: 'Liga Panameña de Fútbol',
+      badge: 'Programado',
+      league: LEAGUE,
       jornada: 13,
+      venue: 'Estadio Maracaná de Colón',
       home: { name: 'Veraguas United', country: 'Panamá', crest: veraguas },
       away: { name: 'Árabe Unido', country: 'Panamá', crest: arabeUnido },
       score: null,
       trailing: '19:00',
-      meta: [
-        { icon: 'castle', label: 'Estadio Maracaná de Colón' },
-        { icon: 'whistle', label: 'Árbitro central' },
-        { icon: 'file', label: 'Informe digital' },
-      ],
     },
   ],
-  '2026-09-30': [
+  '2025-10-03': [
     {
-      id: 'm2',
-      status: 'live',
-      badge: 'EN CURSO',
-      league: 'Liga Panameña de Fútbol',
-      jornada: 12,
-      home: { name: 'Tauro FC', country: 'Panamá', crest: tauro },
-      away: { name: 'San Francisco', country: 'Panamá', crest: sanFrancisco },
-      score: { home: 2, away: 1 },
-      trailing: "Min. 67'",
-      meta: [
-        { icon: 'castle', label: 'Estadio Rommel Fernández' },
-        { icon: 'whistle', label: 'Cuarto árbitro' },
-        { icon: 'file', label: 'En vivo', tone: 'green' },
-      ],
-    },
-  ],
-  '2026-10-01': [
-    {
-      id: 'm3',
-      status: 'finished',
-      badge: 'FINALIZADO',
-      league: 'Liga Panameña de Fútbol',
-      jornada: 11,
-      home: { name: 'Herrera FC', country: 'Panamá', crest: herrera },
-      away: { name: 'UMECIT FC', country: 'Panamá', crest: umecit },
-      score: { home: 0, away: 0 },
-      trailing: '17:00',
-      meta: [
-        { icon: 'castle', label: 'Estadio Los Milagros' },
-        { icon: 'whistle', label: 'Árbitro central' },
-        { icon: 'check', label: 'Informe enviado', tone: 'green' },
-      ],
-    },
-  ],
-  '2026-10-02': [
-    {
-      id: 'm6',
+      id: 'm7',
       status: 'upcoming',
-      badge: 'PRÓXIMO A INICIAR',
-      league: 'Liga Panameña de Fútbol',
+      badge: 'Programado',
+      league: LEAGUE,
       jornada: 13,
+      venue: 'Estadio Javier Cruz',
       home: { name: 'Sporting SM', country: 'Panamá', crest: sporting },
       away: { name: 'Veraguas United', country: 'Panamá', crest: veraguas },
       score: null,
       trailing: '16:00',
-      meta: [
-        { icon: 'castle', label: 'Estadio Javier Cruz' },
-        { icon: 'whistle', label: 'Árbitro central' },
-        { icon: 'file', label: 'Informe digital' },
-      ],
     },
     {
-      id: 'm7',
+      id: 'm8',
       status: 'upcoming',
-      badge: 'PRÓXIMO A INICIAR',
-      league: 'Liga Panameña de Fútbol',
+      badge: 'Programado',
+      league: LEAGUE,
       jornada: 13,
+      venue: 'Estadio Los Milagros',
       home: { name: 'Árabe Unido', country: 'Panamá', crest: arabeUnido },
       away: { name: 'CD Universitario', country: 'Panamá', crest: cdu },
       score: null,
       trailing: '20:00',
-      meta: [
-        { icon: 'castle', label: 'Estadio Los Milagros' },
-        { icon: 'whistle', label: 'Árbitro central' },
-        { icon: 'file', label: 'Informe digital' },
-      ],
     },
   ],
 }
+
+// Equipo arbitral de demostración (mismo para todos los partidos del mock).
+export const DEFAULT_REFEREES: RefereeAssignment[] = [
+  { role: 'Árbitro central', name: 'Carlos Méndez' },
+  { role: 'Asistente 1', name: 'Luis Gómez' },
+  { role: 'Asistente 2', name: 'Andrés Ríos' },
+  { role: 'Cuarto árbitro', name: 'Daniel Vargas' },
+]
+
+// Ciudad del estadio por partido (para la fila de sede del detalle).
+export const MATCH_DETAILS: Record<string, { city: string }> = {
+  m1: { city: 'Panamá' },
+  m2: { city: 'La Chorrera' },
+  m3: { city: 'Colón' },
+  m4: { city: 'Chitré' },
+  m5: { city: 'Panamá' },
+  m6: { city: 'Colón' },
+  m7: { city: 'Panamá' },
+  m8: { city: 'Chitré' },
+}
+

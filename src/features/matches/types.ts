@@ -6,12 +6,9 @@ export interface Team {
   crest: string
 }
 
-export type MetaIcon = 'castle' | 'whistle' | 'file' | 'check'
-
-export interface MatchMetaItem {
-  icon: MetaIcon
-  label: string
-  tone?: 'default' | 'green'
+export interface RefereeAssignment {
+  role: string
+  name: string
 }
 
 export interface Match {
@@ -20,20 +17,19 @@ export interface Match {
   badge: string
   league: string
   jornada: number
+  venue: string
+  featured?: boolean
+  date?: string
+  city?: string
+  referees?: RefereeAssignment[]
   home: Team
   away: Team
   score: { home: number; away: number } | null
   trailing: string
-  meta: MatchMetaItem[]
 }
 
 export interface MatchDay {
   date: string
   label: string
   sublabel: string
-}
-
-export interface MatchSchedule {
-  day: MatchDay
-  matches: Match[]
 }

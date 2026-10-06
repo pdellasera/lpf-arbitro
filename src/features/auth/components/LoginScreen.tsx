@@ -3,7 +3,11 @@ import { PwaDebugResetButton } from '@/features/pwa/components/PwaDebugResetButt
 import { AuthHeader } from './AuthHeader'
 import { LoginCard } from './LoginCard'
 
-export function LoginScreen() {
+interface LoginScreenProps {
+  role?: 'arbitro' | 'comisionado'
+}
+
+export function LoginScreen({ role = 'arbitro' }: LoginScreenProps) {
   return (
     <div className="relative app-h flex w-full flex-col bg-[#04121f]">
       <img
@@ -15,7 +19,7 @@ export function LoginScreen() {
       <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/45" />
 
       <main className="relative z-10 mx-auto my-auto flex w-full max-w-[400px] flex-col px-5 safe-y sm:px-6 md:max-w-[440px]">
-        <AuthHeader />
+        <AuthHeader role={role} />
         <div className="mt-8 w-full md:mt-11">
           <LoginCard />
         </div>

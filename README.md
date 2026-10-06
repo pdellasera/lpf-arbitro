@@ -1,8 +1,9 @@
 # LPF Árbitro — Informe digital del árbitro (PWA)
 
 PWA instalable de la **Liga Panameña de Fútbol** para el informe digital del árbitro:
-login, listado de partidos del día (**Home**) e informe en vivo con tablero de cancha
-y registro de eventos (**Partido en vivo**). Construida con
+login, listado de partidos del día (**Home**), **Detalle del partido** (confirmación previa al
+inicio) e informe en vivo vertical con marcador, pestañas y acciones rápidas
+(**Partido en vivo**). Construida con
 **React 19 + Vite + TypeScript + TailwindCSS v4 + framer-motion + React Query + lucide-react**.
 
 La UI se reconstruyó a partir de análisis de píxeles de los assets del mockup
@@ -199,9 +200,11 @@ src/
 │  ├─ session.ts / SessionProvider.tsx   estado de sesión (localStorage)
 │  └─ types.ts
 ├─ features/matches/            HomeScreen, MatchCard, BottomNav, DaySelector,
-│                               useMatches, mockMatches (listado del día)
-├─ features/match-control/      LiveMatchScreen, PitchBoard, MatchTimeline,
-│                               EventDrawer, useLiveMatchState (informe en vivo)
+│                               MatchDetailScreen, MatchDetailHeader, RefereeRow,
+│                               useMatches, mockMatches (listado + detalle del día)
+├─ features/match-control/      PortraitLiveMatchScreen, LiveTopBar, LiveScorePanel,
+│                               LiveTabBar, EventActionGrid, LiveTabsContent,
+│                               RegisterEventScreen, useLiveMatchState (informe en vivo)
 ├─ features/pwa/                registerServiceWorker, installState, usePwaInstall,
 │                               InstallModal, InstallInstructions, PwaDebugPanel
 ├─ lib/                         queryClient.ts, cn.ts
@@ -251,80 +254,78 @@ Para conectar un backend real, define `VITE_API_URL` (ver `.env.example`).
   `overscroll-behavior: none`, `touch-action: manipulation`, inputs ≥16px (evita el zoom de
   iOS al enfocar) y `interactive-widget=resizes-content` (el teclado no tapa el botón).
 
-## Partido en vivo — escena a sangre + UI flotante
+## Partido en vivo — panel vertical
 
-El tablero de cancha (`PitchBoard.tsx`) ahora es una **capa de fondo a pantalla
-completa** (`absolute inset-0`): el césped a rayas cubre los **4 bordes** del viewport
-(no hay bandas oscuras) y las tribunas (`crowd-top`/`crowd-side`) ocupan exactamente el
-letterbox que deja el campo. El campo conserva la relación de aspecto del diseño
-**976×560** (césped 950×560 + portería de 26px) y se centra con:
+Tras "Iniciar partido" se abre una pantalla **100% vertical** (sin rotación) compuesta por:
 
-```css
-.pitch-stage { container-type: size; }        /* escenario = contenedor de consulta */
-.pitch-stage {
-  --pitch-w: min(100cqw, calc(100cqh * 1.742857));
-  --pitch-h: min(100cqh, calc(100cqw / 1.742857));
-  --band-x: calc((100cqw - var(--pitch-w)) / 2);   /* tribuna lateral */
-  --band-y: calc((100cqh - var(--pitch-h)) / 2);   /* tribuna sup/inf */
-}
-.pitch-box { width: var(--pitch-w); aspect-ratio: 976 / 560; }
-```
+- **Cabecera oscura** (`LiveTopBar.tsx`): Volver · "Partido en vivo" · campana, sobre el
+  gradiente `header-top → header-bottom`.
+- **Panel de marcador** (`LiveScorePanel.tsx`, fondo blanco): liga + jornada con el escudo LPF,
+  pill "EN VIVO" (verde) / "EN PAUSA", y el marcador grande `0 – 0` con el cronómetro `mm:ss`
+  debajo.
+- **Pestañas** (`LiveTabBar.tsx`): Eventos · Alineaciones · Logs. La activa se marca con
+  icono + etiqueta en azul y un subrayado inferior.
+- **Grid de acciones** (`EventActionGrid.tsx`, en "Eventos"): Gol · Tarjeta amarilla ·
+  Tarjeta roja · Cambio · Lesión · Incidencias. Cada celda abre el panel de
+  evento con la opción preseleccionada (p. ej. el color de la tarjeta o el tipo de
+  incidente).
+- **Alineaciones** (`LiveTabsContent.tsx`): titulares por equipo (local/visitante).
+- **Logs** (`LogsSidebar.tsx`): al tocar la pestaña "Logs" se abre un **sidebar lateral**
+  con el historial de eventos e incidencias registradas.
+- **CTA inferior** (footer fijo/sticky, dos botones en línea): `FinishHalfButton.tsx` —
+  "Iniciar partido" / "Finalizar primer tiempo" / "Iniciar segunda parte" / "Finalizar
+  Partido" / "Partido finalizado" según la fase del partido (blanco con borde navy + icono),
+  y `PauseMatchButton.tsx` — "Pausar partido" / "Reanudar partido" (azul + icono). El footer
+  queda anclado abajo (`sticky bottom-0`) mientras el contenido central hace scroll.
 
-de modo que el SVG de marcas (`viewBox="-26 0 976 560"`) se estira 1:1 y **no se
-deforma** en ningún viewport. Todo lo demás **flota** sobre la escena, compacto y con
-fondo translúcido + `backdrop-blur`:
+La **pantalla de registro** (`live/RegisterEventScreen.tsx`) se abre a **pantalla completa**
+(overlay `fixed inset-0` con barra oscura "Registrar …" con campana + hoja blanca de esquinas redondeadas)
+y conserva el flujo de registro completo (bando, jugador, opciones, observaciones y CTA amarillo
+"Guardar …"). Para el gol muestra: franja de marcador compacta, selector de jugador, segmentado
+"Juego abierto · Penal · Tiro libre", "Observaciones (opcional)" y "Guardar gol". Para la tarjeta
+muestra las tarjetas de tipo con icono (`Amarilla`/`Roja`, `CardTypeOptions.tsx`), un input de
+texto libre "Motivo" y "Observaciones (opcional)" con CTA "Guardar tarjeta". El color de tarjeta o
+el tipo de incidente se preseleccionan al abrir (vía `presetOption`). Para el cambio muestra el
+selector de bando con los nombres reales de los equipos ("Equipo"), los dos selectores de jugador
+("Jugador que sale" con icono rojo ↓ y "Jugador que ingresa" con icono verde ↑), "Observaciones
+(opcional)" y CTA "Guardar cambio". Para la incidencia muestra la lista vertical "Tipo de
+incidencia" con icono (`IncidentTypeOptions.tsx`: Lesión · Conducta antideportiva · Demora de
+juego · Invasión de campo · Otro), sin selector de equipo, el textarea "Descripción" y el CTA
+"Guardar incidencia".
 
-- **Header** (`absolute inset-x-2`, alto `--live-header-h = clamp(44px,9.4dvh,76px)`)
-  con Volver / marcador / acciones rápidas.
-- **Sidebar modal de acciones**: un **trigger flotante** compacto (`absolute left`, sobre
-  la tribuna, muestra la acción activa) abre un **panel modal** con backdrop que cubre la
-  cancha, del header al timeline; al elegir una acción se cierra y se abre el drawer.
-- **Timeline** (`absolute inset-x-2 bottom`, alto `--live-timeline-h = clamp(56px,13dvh,110px)`).
-- **Panel de evento** (`event/EventDrawer.tsx`, `absolute right`, ancho
-  `--live-drawer-w = clamp(300px,32vw,440px)`): en `short` ocupa **toda la altura**
-  (`top`/`bottom` pegados a los márgenes, ancho `min(70vw,460px)`) y se divide en **dos
-  paneles** (`short:flex-row`): grilla de jugadores a la izquierda y tipo/minuto/pie a la
-  derecha. La grilla de titulares usa `grid-cols-3 short:grid-cols-4` con celdas de alto
-  `--live-cell-h = clamp(46px,7.4dvh,60px)`, badge de dorsal con el color del equipo y
-  nombre; así los **11 titulares quedan visibles sin scroll** en los 4 viewports. Para el
-  cambio (`sub`) la grilla se alterna con pestañas **Sale/Entra**. Tocar un dorsal de la
-  cancha selecciona al jugador y sincroniza la grilla (y viceversa).
-
-- **Ficha del jugador** (`PlayerCard.tsx`): al tocar un dorsal de la cancha se abre una
-  tarjeta anclada al marcador con **foto (o camiseta CSS con el dorsal) + nombre +
-  posición + equipo + tarjetas**, y atajos **Gol / Tarjeta / Cambio** que abren el drawer
-  con ese jugador ya seleccionado. Usa "flip" por posición para no salirse de `.pitch-box`
-  (`overflow-hidden`).
-
-- **Amonestados en la cancha** (`lib/bookings.ts` + `PlayerMarker`): los eventos con
-  `playerId` se agregan en `getBookings` y cada dorsal pinta un badge **amarillo** (o
-  **rojo** si hay roja directa o segunda amarilla) en la esquina; el mismo badge aparece en
-  la ficha y en la grilla del drawer. El registro de tarjeta mapea la opción a su
-  `EventKind` real (`optionKinds`: "Roja" ya no se guarda como amarilla).
-
-- **Marcador espejado** (`ScoreboardBar.tsx`): `nombre · escudo · marcador` a cada lado,
-  con el cronómetro + fase centrados en una cápsula propia (los dos bloques usan `flex-1`
-  para mantener el centro exacto); en `short` se ocultan los nombres.
-
-- **Variante `short`** (`@media (max-height: 560px)`, declarada con `@custom-variant` en
-  `index.css`): en móvil horizontal el panel de acciones pasa a **4 columnas × 2 filas**
-  con botones "icono + etiqueta" compactos (etiquetas abreviadas donde hace falta), para
-  que las 8 acciones + los botones de fase quepan sin scroll; en tablet el panel es de
-  **2 columnas × 4 filas** con botones grandes centrados.
-- **Etiquetas de jugador**: se escalan con `cqw` (ancho real del campo) y se ocultan —salvo
-  la del jugador seleccionado— cuando el campo mide <760px, vía
-  `@container (max-width: 760px)` y `data-selected`. Así los nombres no tapan la cancha en
-  el móvil.
-- **Marcadores** (`PlayerMarker.tsx`): el punto/número usa `clamp(20px, 2.9cqw, 28px)` y la
-  etiqueta `clamp(9px, 1.15cqw, 11px)`, de modo que todo escala con el campo.
-
-Verificación: `tools/verify-live-css.ps1` audita los tokens de layout en `src` y en el CSS
-compilado (`dist`). `tools/layout-check.mjs` abre el partido en Chrome headless a
-640×320 / 800×360 / 1024×768 / 1524×820, valida que la escena y el césped cubren el
-viewport, el AR, que el panel de acciones está **cerrado por defecto** (cancha despejada),
-que el trigger es compacto y que al abrirlo las 8 acciones caben en el panel sin scroll ni
-solapamientos; además comprueba el orden del marcador (`nombre·escudo·marcador` espejado +
-cronómetro centrado), que los **11 titulares caben sin scroll** en el drawer, que la ficha
-del jugador aparece dentro de la cancha al tocar un dorsal, y que registrar "Roja" pinta un
-badge rojo en el marcador. Guarda capturas en `tools/shots/` (requiere Chrome y
+Verificación: `tools/layout-check.mjs` abre el partido en Chrome headless en 4 tamaños
+verticales (móvil y tablet), confirma que monta el grid, que las 3 pestañas cambian de
+contenido, que abrir una acción muestra la pantalla de registro y que registrar un gol
+incrementa el marcador; guarda capturas en `tools/shots/` (requiere Chrome y
 `node --experimental-websocket`).
+
+## Acta de finalización y documento PDF
+
+Al terminar la **2ª parte** (`phase === 'ended'`) ya no se muestra el footer "Partido finalizado":
+en su lugar aparece la pantalla **"Acta de finalización"** y, al confirmarla, el **documento
+estandarizado de la federación** listo para compartir/descargar:
+
+- **`live/ActaFinalizacionScreen.tsx`** — pantalla de cierre (clon del mockup): cabecera navy
+  (`ActaTopBar.tsx`, "Acta de finalización" + subtítulo), tarjeta blanca `ActaSummaryCard.tsx` con
+  el pill "Resultado final", escudos + marcador `2 - 1` + descanso `(1 - 0)` y las 4 filas
+  Fecha / Hora de inicio / Hora de finalización / Duración; debajo, **"Firma del árbitro"** con
+  `SignaturePad.tsx` (canvas propio sin librerías, exportable a dataURL) y el CTA amarillo
+  `Lock + "Cerrar acta del partido"`.
+- **`acta/ActaDocumentScreen.tsx`** — documento oficial **"INFORME DEL ÁRBITRO"** (clon del mockup
+  federativo) que se abre al pulsar "Cerrar acta": banner verde desechable ("Informe enviado a la
+  LPF…"), encabezado con águila LPF en tinta (`lpf-ink.webp` + wordmark "LIGA / Panameña / de
+  Fútbol") / título / escudo de la federación, filas de identificación (nº de juego, jornada,
+  equipos), rejilla de datos (sede, fecha, hora, resultado, medio tiempo, equipo arbitral), tablas
+  de **Goles** (derivadas de `live.events`), **tiros desde el punto penal** y **Sustituciones**,
+  líneas de **Incidentes del partido** y "Página 1". Abajo, **"Volver inicio"** (vuelve al inicio) y
+  **"Guardar y descargar PDF"** (`window.print()` → "Guardar como PDF"; `@media print` oculta
+  cabecera/banner/botones y expande a hoja **A4 vertical**).
+- **`lib/acta.ts`** — helpers: `halfTimeScore` (goles ≤ 45'), `formatShortDate` ("28 sep 2025"),
+  `matchEndTime` (hora de fin = inicio + reloj + descanso 15'), `formatDuration` ("90' + 7' (97')")
+  y `goalsBySide` (goles por bando con dorsal y penal).
+
+Datos derivados del partido en vivo (equipos, marcador, medio tiempo, sede, fecha, hora, jornada,
+equipo arbitral y goles). Son constantes de demostración en `ActaDocumentScreen.tsx` (sin backend):
+nº de juego (`184`), asesor (`—`), comisario, tanda de penales, sustituciones y las líneas de
+incidentes (texto libre no derivable de eventos). El escudo de la federación es un placeholder de
+texto (FEPAFUT / Panamá) a la espera del asset oficial (`src/assets/fepafut.webp`).

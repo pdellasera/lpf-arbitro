@@ -1,7 +1,11 @@
 import { motion } from 'framer-motion'
 import { LpfLogo } from '@/components/ui/LpfLogo'
 
-export function AuthHeader() {
+interface AuthHeaderProps {
+  role?: 'arbitro' | 'comisionado'
+}
+
+export function AuthHeader({ role = 'arbitro' }: AuthHeaderProps) {
   return (
     <header className="flex flex-col items-center text-center">
       <motion.div
@@ -22,12 +26,13 @@ export function AuthHeader() {
       </motion.p>
 
       <motion.h1
+        key={role}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.26, duration: 0.5, ease: 'easeOut' }}
         className="mt-1 text-[30px] font-extrabold uppercase leading-none tracking-[0.03em] text-white md:text-[36px]"
       >
-        Árbitro
+        {role === 'arbitro' ? 'Árbitro' : 'Comisionado'}
       </motion.h1>
     </header>
   )
