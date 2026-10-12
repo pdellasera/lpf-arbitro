@@ -152,18 +152,16 @@ async function openLiveMatch(width, height) {
   await send('Page.reload', { ignoreCache: true })
   await waitFor(`document.readyState === 'complete' && document.querySelector('article') !== null`)
 
-  // Home → Detalle → Cargar alineaciones → Inicio del partido → primera pantalla de registro (Gol).
+  // Home → Detalle → Inicio del partido → primera pantalla de registro (Gol).
   let opened = false
   for (let i = 0; i < 10 && !opened; i++) {
     await evaluate(`(() => { const a = document.querySelector('article'); if (a) a.click() })()`)
     const detailShown = await waitFor(`document.querySelector('[data-detail-next]') !== null`, 800)
     if (!detailShown) continue
     await evaluate(`(() => { const b = document.querySelector('[data-detail-next]'); if (b) b.click() })()`)
-    const lineupShown = await waitFor(`document.querySelector('[data-lineup-next]') !== null`, 800)
-    if (!lineupShown) continue
-    await evaluate(`(() => { const b = document.querySelector('[data-lineup-next]'); if (b) b.click() })()`)
     const startShown = await waitFor(`document.querySelector('[data-start]') !== null`, 800)
     if (!startShown) continue
+    ok(await waitFor(`document.querySelector('[data-lineup-next]') === null`, 400), 'árbitro: sin paso de Cargar alineaciones', '')
     ok(await waitFor(`document.querySelector('[data-start-kickoff]') !== null`, 400), 'inicio del partido (árbitro): pitazo inicial presente', '')
     ok(await waitFor(`document.querySelector('[data-start-final-kickoff]') !== null`, 400), 'inicio del partido (árbitro): pitazo final presente', '')
     ok(await waitFor(`document.querySelectorAll('[data-start-extra]').length === 2`, 400), 'inicio del partido (árbitro): 2 tiempos extra por periodo', '')
@@ -358,10 +356,15 @@ try {
     ok(await waitFor(`document.querySelector('[data-acta-score]') !== null`, 800), 'acta muestra el marcador final')
     ok(await waitFor(`document.querySelector('[data-acta-clear]') !== null`, 800), 'acta muestra el botón Limpiar')
     ok(await waitFor(`document.querySelector('[data-acta-close]') !== null`, 800), 'acta muestra el CTA Cerrar acta del partido')
+    ok(await waitFor(`document.querySelector('[data-acta-signature-title]')?.textContent.trim() === 'Firma del Árbitro'`, 800), 'acta (árbitro) pide la firma del árbitro')
 
-    // Cerrar acta → documento oficial "INFORME DEL ÁRBITRO" (banner + Cancelar + PDF).
+    // Cerrar acta → aviso de confirmación (verificar antes de cerrar) → documento oficial.
     await evaluate(`(() => { const b = document.querySelector('[data-acta-close]'); if (b) b.click() })()`)
-    ok(await waitFor(`document.querySelector('[data-acta-doc]') !== null`, 1000), 'Cerrar acta abre el documento')
+    ok(await waitFor(`document.querySelector('[data-acta-confirm]') !== null`, 800), 'Cerrar acta muestra el aviso de confirmación')
+    ok(await waitFor(`document.querySelector('[data-acta-confirm-accept]') !== null`, 800), 'el aviso ofrece Cerrar acta')
+    ok(await waitFor(`document.querySelector('[data-acta-confirm-cancel]') !== null`, 800), 'el aviso ofrece Cancelar')
+    await evaluate(`(() => { const b = document.querySelector('[data-acta-confirm-accept]'); if (b) b.click() })()`)
+    ok(await waitFor(`document.querySelector('[data-acta-doc]') !== null`, 1000), 'Confirmar cierre abre el documento')
     ok(await waitFor(`document.querySelector('[data-acta-banner]') !== null`, 800), 'documento muestra el banner de informe enviado')
     ok(await waitFor(`document.querySelector('[data-acta-home]') !== null`, 800), 'documento muestra Volver inicio')
     ok(await waitFor(`document.querySelector('[data-acta-pdf]') !== null`, 800), 'documento muestra Guardar y descargar PDF')
@@ -393,21 +396,43 @@ try {
     ok(!initial.includes('Funciona correctamente'), 'ninguna opción aparece seleccionada de entrada', '')
     ok(await waitFor(`document.querySelector('[data-pre-row="lighting"] [data-pre-check]') === null`, 400), 'sin check verde de entrada', '')
 
-    // Tocar una fila selecciona la primera opción: muestra el valor y el check verde.
+    // Tocar una fila (o "Cambiar") abre el modal con opciones + observación.
     await evaluate(`(() => { const r = document.querySelector('[data-pre-row="lighting"]'); if (r) r.click() })()`)
-    ok(await waitFor(`document.querySelector('[data-pre-row="lighting"]')?.textContent.includes('Funciona correctamente')`, 800), 'tocar una fila selecciona la primera opción', '')
-    ok(await waitFor(`document.querySelector('[data-pre-row="lighting"] [data-pre-check]') !== null`, 800), 'check verde aparece al seleccionar', '')
+    ok(await waitFor(`document.querySelector('[data-pre-modal]') !== null`, 800), 'Cambiar abre el modal del ítem', '')
+    ok(await waitFor(`document.querySelectorAll('[data-pre-modal] [data-pre-option]').length === 2`, 800), 'modal muestra las opciones del ítem', '')
+    ok(await waitFor(`document.querySelector('[data-pre-modal] textarea[data-pre-note]') !== null`, 800), 'modal muestra el textarea de observación', '')
+
+    await evaluate(`(() => { const o = document.querySelector('[data-pre-modal] [data-pre-option="0"]'); if (o) o.click() })()`)
+    await evaluate(`document.querySelector('[data-pre-modal] textarea[data-pre-note]').focus()`)
+    await send('Input.insertText', { text: 'Probar iluminación' })
+    await evaluate(`(() => { const b = document.querySelector('[data-pre-modal] [data-pre-save]'); if (b) b.click() })()`)
+    ok(await waitFor(`document.querySelector('[data-pre-modal]') === null`, 800), 'Guardar cierra el modal', '')
+    ok(await waitFor(`document.querySelector('[data-pre-row="lighting"]')?.textContent.includes('Funciona correctamente')`, 800), 'la opción elegida queda en la fila', '')
+    ok(await waitFor(`document.querySelector('[data-pre-row="lighting"] [data-pre-check]') !== null`, 800), 'check verde aparece al guardar', '')
+    ok(await waitFor(`document.querySelector('[data-pre-row="lighting"] [data-pre-observation]')?.textContent.includes('Probar iluminación')`, 800), 'la observación queda visible en la fila', '')
 
     const shotPre = await send('Page.captureScreenshot', { format: 'png' })
     writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}-pre.png`), Buffer.from(shotPre.result.data, 'base64'))
     console.log(`  captura → tools/shots/${vp.name}-pre.png`)
   }
 
-  // ── Flujo Comisionado: Inicio del partido. ──
+  // ── Flujo Comisionado: Cargar alineaciones → Inicio del partido. ──
   for (const vp of VIEWPORTS) {
     console.log(`\n=== ${vp.name}-start (${vp.width}x${vp.height}) ===`)
     await openPreMatchChecklist(vp.width, vp.height)
     await evaluate(`(() => { const b = document.querySelector('[data-pre-next]'); if (b) b.click() })()`)
+    if (!(await waitFor(`document.querySelector('[data-lineup-next]') !== null`, 1500))) {
+      throw new Error('no se abrió Cargar alineaciones (comisario)')
+    }
+
+    // Acumula minuto: agregar un jugador muestra el toggle Sí/No y se puede cambiar.
+    await evaluate(`(() => { const b = document.querySelector('[data-lineup-add="home-starters"]'); if (b) b.click() })()`)
+    ok(await waitFor(`document.querySelector('[data-lineup-minutes="yes"]') !== null`, 800), 'agregar jugador muestra el toggle Acumula minuto', '')
+    ok(await waitFor(`document.querySelector('[data-lineup-minutes="yes"]')?.getAttribute('aria-pressed') === 'true'`, 800), 'Acumula minuto inicia en Sí', '')
+    await evaluate(`(() => { const b = document.querySelector('[data-lineup-minutes="no"]'); if (b) b.click() })()`)
+    ok(await waitFor(`document.querySelector('[data-lineup-minutes="no"]')?.getAttribute('aria-pressed') === 'true'`, 800), 'No queda seleccionado al tocarlo', '')
+
+    await evaluate(`(() => { const b = document.querySelector('[data-lineup-next]'); if (b) b.click() })()`)
     if (!(await waitFor(`document.querySelector('[data-start]') !== null`, 1500))) {
       throw new Error('no se abrió Inicio del partido (start)')
     }
@@ -456,13 +481,23 @@ try {
     await evaluate(`(() => { const b = document.querySelector('[data-start-delay-period="local"] [data-start-period-option="second"]'); if (b) b.click() })()`)
     ok(await waitFor(`document.querySelector('[data-start-delay-period="local"] [data-start-period-option="first"]')?.getAttribute('aria-pressed') === 'true' && document.querySelector('[data-start-delay-period="local"] [data-start-period-option="second"]')?.getAttribute('aria-pressed') === 'true'`, 800), 'ambos periodos pueden seleccionarse a la vez', '')
 
-    // Registrar pitazo inicial → rellena la hora real de inicio (sin navegar).
-    await evaluate(`(() => { const b = document.querySelector('[data-start-kickoff]'); if (b) b.click() })()`)
-    ok(await waitFor(`(() => { const t = document.querySelector('[data-start-time]')?.textContent.trim(); return t && t !== '--:--' && /^[0-9]{2}:[0-9]{2}$/.test(t) })()`, 800), 'registrar pitazo inicial rellena la hora', '')
+    // Seleccionar hora de inicio (selector manual, no automático).
+    await evaluate(`(() => {
+      const el = document.querySelector('[data-start-kickoff]')
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+      setter.call(el, '15:30')
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    })()`)
+    ok(await waitFor(`document.querySelector('[data-start-time]')?.textContent.trim() === '15:30'`, 800), 'seleccionar hora de inicio actualiza la hora', '')
 
-    // Registrar pitazo final → rellena la hora real de finalización.
-    await evaluate(`(() => { const b = document.querySelector('[data-start-final-kickoff]'); if (b) b.click() })()`)
-    ok(await waitFor(`(() => { const t = document.querySelector('[data-start-final-time]')?.textContent.trim(); return t && t !== '--:--' && /^[0-9]{2}:[0-9]{2}$/.test(t) })()`, 800), 'registrar pitazo final rellena la hora', '')
+    // Seleccionar hora de finalización (selector manual, no automático).
+    await evaluate(`(() => {
+      const el = document.querySelector('[data-start-final-kickoff]')
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+      setter.call(el, '17:45')
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    })()`)
+    ok(await waitFor(`document.querySelector('[data-start-final-time]')?.textContent.trim() === '17:45'`, 800), 'seleccionar hora de finalización actualiza la hora', '')
 
     // Tiempo extra por periodo: sumar minutos al primer tiempo.
     await evaluate(`(() => { const b = document.querySelector('[data-start-extra="first"] [data-start-extra-plus]'); if (b) b.click() })()`)
@@ -493,6 +528,7 @@ try {
       await evaluate(`(() => { const b = document.querySelector('[data-live-next]'); if (b) b.click() })()`)
     }
     ok(await waitFor(`document.querySelector('[data-acta]') !== null`, 1000), 'Siguiente recorre las 5 pantallas y abre el Acta', '')
+    ok(await waitFor(`document.querySelector('[data-acta-signature-title]')?.textContent.trim() === 'Firma del Comisionado'`, 800), 'acta (comisionado) pide la firma del comisionado', '')
   }
 } finally {
   chrome.kill()

@@ -46,29 +46,30 @@ export default function App() {
           ) : view === 'pre' && selectedMatch ? (
             <PreMatchChecklistScreen
               onBack={() => setView('home')}
-              onNext={() => setView('start')}
+              onNext={() => setView('lineup')}
             />
           ) : view === 'start' && selectedMatch ? (
             <MatchStartScreen
               showExtras={role === 'comisionado'}
-              onBack={() => setView(role === 'comisionado' ? 'pre' : 'lineup')}
+              onBack={() => setView(role === 'comisionado' ? 'lineup' : 'detail')}
               onNext={() => setView('match')}
             />
           ) : view === 'lineup' && selectedMatch ? (
             <LoadLineupScreen
               match={selectedMatch}
-              onBack={() => setView('detail')}
+              onBack={() => setView('pre')}
               onNext={() => setView('start')}
             />
           ) : view === 'detail' && selectedMatch ? (
             <MatchDetailScreen
               match={selectedMatch}
               onBack={() => setView('home')}
-              onNext={() => setView('lineup')}
+              onNext={() => setView('start')}
             />
           ) : selectedMatch ? (
             <PortraitLiveMatchScreen
               match={selectedMatch}
+              role={role}
               autoStart
               onBack={() => setView('start')}
               onHome={() => setView('home')}

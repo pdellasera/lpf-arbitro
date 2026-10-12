@@ -27,11 +27,6 @@ export function MatchStartScreen({ onBack, onNext, showExtras = true }: MatchSta
   const [uniformDetail, setUniformDetail] = useState('')
   const [attendance, setAttendance] = useState<Record<string, string>>({})
 
-  function currentTime() {
-    const now = new Date()
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-  }
-
   function setExtraTimePeriod(period: ExtraTimePeriod, minutes: number) {
     setExtraTime((prev) => ({ ...prev, [period]: minutes }))
   }
@@ -61,7 +56,7 @@ export function MatchStartScreen({ onBack, onNext, showExtras = true }: MatchSta
   }
 
   return (
-    <div data-start className="app-h relative mx-auto flex w-full max-w-[430px] flex-col bg-header-bottom">
+    <div data-start className="app-h h-dvh relative mx-auto flex w-full max-w-[430px] flex-col overflow-hidden bg-header-bottom">
       <MatchStartTopBar onBack={onBack} />
 
       <main className="flex flex-1 flex-col overflow-hidden rounded-t-[28px] bg-page">
@@ -70,8 +65,8 @@ export function MatchStartScreen({ onBack, onNext, showExtras = true }: MatchSta
             <KickoffCard
               kickoff={kickoff}
               finalTime={finalTime}
-              onRecordKickoff={() => setKickoff(currentTime())}
-              onRecordFinal={() => setFinalTime(currentTime())}
+              onKickoffChange={(value) => setKickoff(value || null)}
+              onFinalChange={(value) => setFinalTime(value || null)}
               extraTime={extraTime}
               onExtraTimeChange={setExtraTimePeriod}
             />

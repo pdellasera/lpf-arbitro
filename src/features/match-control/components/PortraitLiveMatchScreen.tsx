@@ -13,12 +13,13 @@ import { ActaFinalizacionScreen } from './live/ActaFinalizacionScreen'
 
 interface PortraitLiveMatchScreenProps {
   match: Match
+  role: 'arbitro' | 'comisionado'
   onBack: () => void
   onHome: () => void
   autoStart?: boolean
 }
 
-export function PortraitLiveMatchScreen({ match, onBack, onHome, autoStart = false }: PortraitLiveMatchScreenProps) {
+export function PortraitLiveMatchScreen({ match, role, onBack, onHome, autoStart = false }: PortraitLiveMatchScreenProps) {
   const [initial] = useState(() => createLiveMatch(match))
   const { match: live, seconds, recordEvent, startMatch, endHalf } = useLiveMatchState(initial)
 
@@ -67,6 +68,7 @@ export function PortraitLiveMatchScreen({ match, onBack, onHome, autoStart = fal
       <ActaFinalizacionScreen
         match={match}
         live={live}
+        role={role}
         seconds={seconds}
         onBack={() => setShowActa(false)}
         onClose={() => setShowDoc(true)}

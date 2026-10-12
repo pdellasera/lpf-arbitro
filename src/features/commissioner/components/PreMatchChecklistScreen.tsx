@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { PRE_MATCH_CHECKLIST } from '../data/preMatchChecklist'
+import { PreMatchItemModal } from './PreMatchItemModal'
 import { PreMatchTopBar } from './PreMatchTopBar'
 
 interface PreMatchChecklistScreenProps {
@@ -14,18 +15,20 @@ export function PreMatchChecklistScreen({ onBack, onNext }: PreMatchChecklistScr
   const [values, setValues] = useState<Record<string, number>>(() =>
     Object.fromEntries(PRE_MATCH_CHECKLIST.map((item) => [item.id, item.valueIndex])),
   )
+  const [observations, setObservations] = useState<Record<string, string>>({})
+  const [activeId, setActiveId] = useState<string | null>(null)
 
-  function cycle(id: string) {
-    const item = PRE_MATCH_CHECKLIST.find((entry) => entry.id === id)
-    if (!item || item.options.length < 2) return
-    setValues((prev) => {
-      const current = prev[id] ?? item.valueIndex
-      return { ...prev, [id]: (current + 1) % item.options.length }
-    })
+  const activeItem = activeId ? (PRE_MATCH_CHECKLIST.find((entry) => entry.id === activeId) ?? null) : null
+
+  function saveItem(valueIndex: number, observation: string) {
+    if (!activeId) return
+    setValues((prev) => ({ ...prev, [activeId]: valueIndex }))
+    setObservations((prev) => ({ ...prev, [activeId]: observation }))
+    setActiveId(null)
   }
 
   return (
-    <div data-pre className="app-h relative mx-auto flex w-full max-w-[430px] flex-col bg-header-bottom">
+    <div data-pre className="app-h h-dvh relative mx-auto flex w-full max-w-[430px] flex-col overflow-hidden bg-header-bottom">
       <PreMatchTopBar onBack={onBack} />
 
       <main className="flex flex-1 flex-col overflow-hidden rounded-t-[28px] bg-page">
@@ -43,12 +46,13 @@ export function PreMatchChecklistScreen({ onBack, onNext }: PreMatchChecklistScr
             {PRE_MATCH_CHECKLIST.map((item, index) => {
               const valueIndex = values[item.id] ?? item.valueIndex
               const subtitle = valueIndex >= 0 ? item.options[valueIndex] : null
+              const observation = observations[item.id]
               return (
                 <button
                   key={item.id}
                   type="button"
                   data-pre-row={item.id}
-                  onClick={() => cycle(item.id)}
+                  onClick={() => setActiveId(item.id)}
                   className={cn(
                     'flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors active:bg-badge-gray',
                     index > 0 && 'border-t border-line',
@@ -64,8 +68,13 @@ export function PreMatchChecklistScreen({ onBack, onNext }: PreMatchChecklistScr
                   <span className="min-w-0 flex-1">
                     <span className="block text-[16px] font-bold leading-tight text-ink">{item.label}</span>
                     {subtitle && <span className="mt-0.5 block text-[14px] leading-tight text-ink-soft">{subtitle}</span>}
+                    {observation && (
+                      <span data-pre-observation className="mt-0.5 block text-[13px] italic leading-tight text-ink-soft">
+                        Observación: {observation}
+                      </span>
+                    )}
                   </span>
-                  <span className="text-[15px] font-semibold text-brand">Cambiar</span>
+                  <span data-pre-change={item.id} className="text-[15px] font-semibold text-brand">Cambiar</span>
                 </button>
               )
             })}
@@ -95,6 +104,15 @@ export function PreMatchChecklistScreen({ onBack, onNext }: PreMatchChecklistScr
           </div>
         </div>
       </main>
+
+      <PreMatchItemModal
+        open={activeId !== null}
+        item={activeItem}
+        valueIndex={activeId ? (values[activeId] ?? -1) : -1}
+        observation={activeId ? (observations[activeId] ?? '') : ''}
+        onClose={() => setActiveId(null)}
+        onSave={saveItem}
+      />
     </div>
   )
 }

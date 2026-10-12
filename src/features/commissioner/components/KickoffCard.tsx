@@ -1,12 +1,12 @@
-import { Clock, Minus, Play, Plus, Timer } from 'lucide-react'
+import { Clock, Minus, Plus, Timer } from 'lucide-react'
 
 export type ExtraTimePeriod = 'first' | 'second'
 
 interface KickoffCardProps {
   kickoff: string | null
   finalTime: string | null
-  onRecordKickoff: () => void
-  onRecordFinal: () => void
+  onKickoffChange: (value: string) => void
+  onFinalChange: (value: string) => void
   extraTime: { first: number; second: number }
   onExtraTimeChange: (period: ExtraTimePeriod, minutes: number) => void
 }
@@ -17,8 +17,8 @@ const MAX_EXTRA_MINUTES = 15
 export function KickoffCard({
   kickoff,
   finalTime,
-  onRecordKickoff,
-  onRecordFinal,
+  onKickoffChange,
+  onFinalChange,
   extraTime,
   onExtraTimeChange,
 }: KickoffCardProps) {
@@ -33,15 +33,14 @@ export function KickoffCard({
             {kickoff ?? '--:--'}
           </p>
           <p className="mt-1 text-[12px] leading-tight text-ink-mute">Hora real de inicio</p>
-          <button
-            type="button"
+          <input
+            type="time"
             data-start-kickoff
-            onClick={onRecordKickoff}
-            className="mt-3 flex h-[44px] w-full items-center justify-center gap-1.5 rounded-xl bg-brand text-[14px] font-bold text-white transition-all duration-150 hover:bg-brand-hover active:scale-[0.98]"
-          >
-            <Play className="h-4 w-4" fill="currentColor" />
-            Registrar
-          </button>
+            aria-label="Hora real de inicio"
+            value={kickoff ?? ''}
+            onChange={(e) => onKickoffChange(e.target.value)}
+            className="mt-3 h-[44px] w-full rounded-xl border border-line bg-white px-2 text-center text-[15px] font-bold tabular-nums text-ink outline-none focus:border-brand"
+          />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col items-center rounded-2xl border border-dashed border-tint-line bg-tint px-3 py-4">
@@ -51,15 +50,14 @@ export function KickoffCard({
             {finalTime ?? '--:--'}
           </p>
           <p className="mt-1 text-[12px] leading-tight text-ink-mute">Hora real de finalización</p>
-          <button
-            type="button"
+          <input
+            type="time"
             data-start-final-kickoff
-            onClick={onRecordFinal}
-            className="mt-3 flex h-[44px] w-full items-center justify-center gap-1.5 rounded-xl bg-brand text-[14px] font-bold text-white transition-all duration-150 hover:bg-brand-hover active:scale-[0.98]"
-          >
-            <Play className="h-4 w-4" fill="currentColor" />
-            Registrar
-          </button>
+            aria-label="Hora real de finalización"
+            value={finalTime ?? ''}
+            onChange={(e) => onFinalChange(e.target.value)}
+            className="mt-3 h-[44px] w-full rounded-xl border border-line bg-white px-2 text-center text-[15px] font-bold tabular-nums text-ink outline-none focus:border-brand"
+          />
         </div>
       </div>
 

@@ -278,24 +278,24 @@ En el rol **Comisionado**, al tocar la card de un partido la primera pantalla qu
   (tile verde + título + subtítulo + link "Cambiar"):
   Similitud de uniformes · Estado del terreno · Alumbrado · Recoge balones ·
   Seguridad (Policía) · Protección Civil · Ambulancias.
-- **Interacción**: tocar una fila (o "Cambiar") cicla el valor de ese ítem y actualiza el subtítulo.
+- **Interacción**: tocar una fila (o "Cambiar") abre un modal para elegir la opción del ítem y
+  escribir una **Observación**; al guardar se actualizan el subtítulo y la observación en la fila.
 - **Footer sticky** (`bg-white`, safe-area): botón cuadrado "volver" (`bg-badge-gray`) a la
-  izquierda y CTA **"Siguiente →"** azul (`bg-brand`) a la derecha, que abre la siguiente pantalla
-  del flujo Comisionado (**Inicio del partido**).
+  izquierda y CTA **"Siguiente →"** azul (`bg-brand`) a la derecha, que abre **Cargar alineaciones**.
 
 Los textos del checklist (etiquetas y opciones) están centralizados en
 `data/preMatchChecklist.ts` para ajustarlos al mockup oficial sin tocar la UI.
 
 ## Inicio del partido (Comisionado)
 
-Al pulsar **"Siguiente →"** en la Lista Previa se abre **"Inicio del partido"**
+Al pulsar **"Siguiente →"** en **"Cargar alineaciones"** se abre **"Inicio del partido"**
 (`features/commissioner/MatchStartScreen.tsx`):
 
 - **Cabecera navy** (`MatchStartTopBar.tsx`): flecha atrás y el título **"Inicio del partido"**
   **alineado a la izquierda** (a diferencia de las cabeceras centradas).
 - **Cuerpo** sobre `bg-page` con `rounded-t-[28px]` (el mismo patrón que el resto de pantallas):
   **"Pitazo inicial"** y **"Pitazo final"** lado a lado (`KickoffCard.tsx`, cada uno con `--:--`,
-  "Hora real de inicio/finalización" y botón "Registrar" que rellena la hora), debajo
+  "Hora real de inicio/finalización" y un **selector de hora** para registrarla manualmente), debajo
   **"Tiempo extra por periodo"** (steppers "Primer tiempo" / "Segundo tiempo") y las tarjetas
   exclusivas del Comisionado:
   - **"Retrasos durante el partido"** (`DelaysCard.tsx`, tres preguntas Sí/No — "No" por defecto).
@@ -306,37 +306,37 @@ Al pulsar **"Siguiente →"** en la Lista Previa se abre **"Inicio del partido"*
   - **"Asistencia total de fanáticos al estadio"** (`AttendanceCard.tsx`): **"Desglosar la
     asistencia"** en **General · Jubilados · Niños · Cortesías** (campos numéricos) y el **Total**
     calculado.
-- **Footer sticky**: **"Volver"** (gris, vuelve a la Lista Previa) y **"Siguiente →"** (azul,
+- **Footer sticky**: **"Volver"** (gris, vuelve a "Cargar alineaciones") y **"Siguiente →"** (azul,
   abre la primera pantalla de registro (**Gol**)).
 
 Los textos de los retrasos están centralizados en `data/matchStartDelays.ts` y los de las
 tarjetas de uniformes/asistencia en `data/matchStartExtras.ts`.
 
-## Cargar alineaciones (Árbitro)
+## Cargar alineaciones (Comisionado)
 
-Tras el **"Detalle del partido"**, el rol **Árbitro** abre **"Cargar alineaciones"**
+Tras la **"Lista Previa (Antes del partido)"**, el rol **Comisionado** abre **"Cargar alineaciones"**
 (`features/match-control/LoadLineupScreen.tsx`):
 
-- **Cabecera navy** (sticky): flecha atrás (vuelve al Detalle) y el título **"Cargar alineaciones"**.
+- **Cabecera navy** (sticky): flecha atrás (vuelve a la Lista Previa) y el título **"Cargar alineaciones"**.
 - **Cuerpo** sobre `bg-page` con `rounded-t-[28px]`: para cada equipo, **Titulares** (máx. 11) y
   **Suplentes** (máx. 7) con un botón **"Agregar jugador"** que añade una fila editable
-  (**Dorsal**, **Nombre**, **Posición**).
-- **Footer sticky**: **"Volver"** (gris, vuelve al Detalle) y **"Siguiente →"** (azul, abre
+  (**Dorsal**, **Nombre**, **Posición**) y un toggle **"Acumula minuto"** (**Sí/No**) por jugador.
+- **Footer sticky**: **"Volver"** (gris, vuelve a la Lista Previa) y **"Siguiente →"** (azul, abre
   **"Inicio del partido"**).
 
 ## Inicio del partido (Árbitro)
 
-Tras **"Cargar alineaciones"**, el Árbitro abre **"Inicio del partido"** reutilizando
+Tras el **"Detalle del partido"**, el Árbitro abre **"Inicio del partido"** reutilizando
 `features/commissioner/MatchStartScreen.tsx` con `showExtras={false}` (solo lo necesario):
 
-- **Cabecera navy** (`MatchStartTopBar.tsx`): flecha atrás (vuelve a "Cargar alineaciones") y el
+- **Cabecera navy** (`MatchStartTopBar.tsx`): flecha atrás (vuelve al "Detalle del partido") y el
   título **"Inicio del partido"** alineado a la izquierda.
 - **Cuerpo** sobre `bg-page` con `rounded-t-[28px]`: **"Pitazo inicial"** y **"Pitazo final"**
-  lado a lado (`KickoffCard.tsx`, cada uno con `--:--`, "Hora real de inicio/finalización" y botón
-  "Registrar" que rellena la hora) y debajo **"Tiempo extra por periodo"** (steppers "Primer tiempo" /
-  "Segundo tiempo"). Sin las tarjetas exclusivas del Comisionado (Retrasos, Similitud de
-  uniformes, Asistencia).
-- **Footer sticky**: **"Volver"** (gris, vuelve a "Cargar alineaciones") y **"Siguiente →"** (azul,
+  lado a lado (`KickoffCard.tsx`, cada uno con `--:--`, "Hora real de inicio/finalización" y un
+  **selector de hora** para registrarla manualmente) y debajo **"Tiempo extra por periodo"**
+  (steppers "Primer tiempo" / "Segundo tiempo"). Sin las tarjetas exclusivas del Comisionado
+  (Retrasos, Similitud de uniformes, Asistencia).
+- **Footer sticky**: **"Volver"** (gris, vuelve al "Detalle del partido") y **"Siguiente →"** (azul,
   abre la primera pantalla de registro (**Gol**)).
 
 ## 5 pantallas de registro
@@ -390,9 +390,11 @@ estandarizado de la federación** listo para compartir/descargar:
 - **`live/ActaFinalizacionScreen.tsx`** — pantalla de cierre (clon del mockup): cabecera navy
   (`ActaTopBar.tsx`, "Acta de finalización" + subtítulo), tarjeta blanca `ActaSummaryCard.tsx` con
   el pill "Resultado final", escudos + marcador `2 - 1` + descanso `(1 - 0)` y las 4 filas
-  Fecha / Hora de inicio / Hora de finalización / Duración; debajo, **"Firma del árbitro"** con
-  `SignaturePad.tsx` (canvas propio sin librerías, exportable a dataURL) y el CTA amarillo
-  `Lock + "Cerrar acta del partido"`.
+  Fecha / Hora de inicio / Hora de finalización / Duración; debajo, la **firma según el rol**
+  (**"Firma del Árbitro"** o **"Firma del Comisionado"**) con `SignaturePad.tsx` (canvas propio sin
+  librerías, exportable a dataURL) y el CTA amarillo `Lock + "Cerrar acta del partido"`, que antes
+  de cerrar muestra un **aviso de confirmación** ("verifica que todo quedó completado correctamente;
+  una vez cerrada, el acta no se puede editar").
 - **`acta/ActaDocumentScreen.tsx`** — documento oficial **"INFORME DEL ÁRBITRO"** (clon del mockup
   federativo) que se abre al pulsar "Cerrar acta": banner verde desechable ("Informe enviado a la
   LPF…"), encabezado con águila LPF en tinta (`lpf-ink.webp` + wordmark "LIGA / Panameña / de

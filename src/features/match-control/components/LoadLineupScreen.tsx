@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ArrowLeft, ArrowRight, Plus, X } from 'lucide-react'
+import { cn } from '@/lib/cn'
 import type { Match, Team } from '@/features/matches/types'
 
 interface LoadLineupScreenProps {
@@ -17,6 +18,8 @@ interface PlayerEntry {
   number: string
   name: string
   position: string
+  /** Si el jugador acumula minuto (Sí) o no (No). */
+  accumulatesMinutes: boolean
 }
 
 const STARTERS_LIMIT = 11
@@ -25,47 +28,86 @@ const BENCH_LIMIT = 7
 let entrySeq = 0
 function createEntry(): PlayerEntry {
   entrySeq += 1
-  return { id: `entry-${entrySeq}-${Date.now()}`, number: '', name: '', position: '' }
+  return { id: `entry-${entrySeq}-${Date.now()}`, number: '', name: '', position: '', accumulatesMinutes: true }
 }
 
 function PlayerEntryRow({
   entry,
   onChange,
+  onToggleAccumulates,
   onRemove,
 }: {
   entry: PlayerEntry
   onChange: (field: PlayerField, value: string) => void
+  onToggleAccumulates: () => void
   onRemove: () => void
 }) {
+  const base = 'h-8 rounded-lg px-3 text-[13px] font-bold transition-colors'
   return (
-    <div className="flex items-center gap-2 border-t border-line px-3 py-2">
-      <input
-        value={entry.number}
-        onChange={(e) => onChange('number', e.target.value)}
-        placeholder="Dorsal"
-        inputMode="numeric"
-        className="h-11 w-16 shrink-0 rounded-xl border border-line bg-white px-2 text-center text-[15px] font-bold tabular-nums text-ink outline-none placeholder:text-ink-mute focus:border-brand"
-      />
-      <input
-        value={entry.name}
-        onChange={(e) => onChange('name', e.target.value)}
-        placeholder="Nombre"
-        className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-white px-3 text-[15px] text-ink outline-none placeholder:text-ink-mute focus:border-brand"
-      />
-      <input
-        value={entry.position}
-        onChange={(e) => onChange('position', e.target.value)}
-        placeholder="Posición"
-        className="h-11 w-24 shrink-0 rounded-xl border border-line bg-white px-2 text-[14px] text-ink outline-none placeholder:text-ink-mute focus:border-brand"
-      />
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label="Quitar jugador"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ink-mute transition-colors hover:text-pick"
-      >
-        <X className="h-4 w-4" />
-      </button>
+    <div className="border-t border-line px-3 py-2">
+      <div className="flex items-center gap-2">
+        <input
+          value={entry.number}
+          onChange={(e) => onChange('number', e.target.value)}
+          placeholder="Dorsal"
+          inputMode="numeric"
+          className="h-11 w-16 shrink-0 rounded-xl border border-line bg-white px-2 text-center text-[15px] font-bold tabular-nums text-ink outline-none placeholder:text-ink-mute focus:border-brand"
+        />
+        <input
+          value={entry.name}
+          onChange={(e) => onChange('name', e.target.value)}
+          placeholder="Nombre"
+          className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-white px-3 text-[15px] text-ink outline-none placeholder:text-ink-mute focus:border-brand"
+        />
+        <input
+          value={entry.position}
+          onChange={(e) => onChange('position', e.target.value)}
+          placeholder="Posición"
+          className="h-11 w-24 shrink-0 rounded-xl border border-line bg-white px-2 text-[14px] text-ink outline-none placeholder:text-ink-mute focus:border-brand"
+        />
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Quitar jugador"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ink-mute transition-colors hover:text-pick"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="mt-2 flex items-center justify-between">
+        <span className="text-[13px] font-semibold text-ink-soft">Acumula minuto</span>
+        <div className="flex shrink-0 gap-1.5">
+          <button
+            type="button"
+            data-lineup-minutes="yes"
+            aria-pressed={entry.accumulatesMinutes}
+            onClick={() => !entry.accumulatesMinutes && onToggleAccumulates()}
+            className={cn(
+              base,
+              entry.accumulatesMinutes
+                ? 'border border-accent-green bg-accent-green-soft text-accent-green'
+                : 'border border-transparent bg-badge-gray text-badge-gray-ink',
+            )}
+          >
+            Sí
+          </button>
+          <button
+            type="button"
+            data-lineup-minutes="no"
+            aria-pressed={!entry.accumulatesMinutes}
+            onClick={() => entry.accumulatesMinutes && onToggleAccumulates()}
+            className={cn(
+              base,
+              !entry.accumulatesMinutes
+                ? 'border border-danger bg-danger-soft text-danger'
+                : 'border border-transparent bg-badge-gray text-badge-gray-ink',
+            )}
+          >
+            No
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -95,6 +137,7 @@ function TeamLineupCard({
   entries,
   onAdd,
   onChange,
+  onToggleAccumulates,
   onRemove,
 }: {
   team: Team
@@ -102,6 +145,7 @@ function TeamLineupCard({
   entries: { starters: PlayerEntry[]; bench: PlayerEntry[] }
   onAdd: (section: Section) => void
   onChange: (section: Section, id: string, field: PlayerField, value: string) => void
+  onToggleAccumulates: (section: Section, id: string) => void
   onRemove: (section: Section, id: string) => void
 }) {
   return (
@@ -120,6 +164,7 @@ function TeamLineupCard({
             key={entry.id}
             entry={entry}
             onChange={(field, value) => onChange('starters', entry.id, field, value)}
+            onToggleAccumulates={() => onToggleAccumulates('starters', entry.id)}
             onRemove={() => onRemove('starters', entry.id)}
           />
         ))}
@@ -139,6 +184,7 @@ function TeamLineupCard({
             key={entry.id}
             entry={entry}
             onChange={(field, value) => onChange('bench', entry.id, field, value)}
+            onToggleAccumulates={() => onToggleAccumulates('bench', entry.id)}
             onRemove={() => onRemove('bench', entry.id)}
           />
         ))}
@@ -152,7 +198,7 @@ function TeamLineupCard({
   )
 }
 
-/** Pantalla del Árbitro para cargar titulares y suplentes (inputs Dorsal/Nombre/Posición). */
+/** Pantalla del Comisionado para cargar titulares y suplentes (Dorsal/Nombre/Posición + Acumula minuto). */
 export function LoadLineupScreen({ match, onBack, onNext }: LoadLineupScreenProps) {
   const [lineups, setLineups] = useState<Record<Side, { starters: PlayerEntry[]; bench: PlayerEntry[] }>>({
     home: { starters: [], bench: [] },
@@ -190,8 +236,20 @@ export function LoadLineupScreen({ match, onBack, onNext }: LoadLineupScreenProp
     }))
   }
 
+  function toggleAccumulates(side: Side, section: Section, id: string) {
+    setLineups((prev) => ({
+      ...prev,
+      [side]: {
+        ...prev[side],
+        [section]: prev[side][section].map((e) =>
+          e.id === id ? { ...e, accumulatesMinutes: !e.accumulatesMinutes } : e,
+        ),
+      },
+    }))
+  }
+
   return (
-    <div data-lineup className="app-h relative mx-auto flex w-full max-w-[430px] flex-col bg-header-bottom">
+    <div data-lineup className="app-h h-dvh relative mx-auto flex w-full max-w-[430px] flex-col overflow-hidden bg-header-bottom">
       <header className="sticky top-0 z-30 shrink-0 bg-gradient-to-b from-header-top to-header-bottom">
         <div className="relative flex items-center justify-center px-4 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))]">
           <button
@@ -220,6 +278,7 @@ export function LoadLineupScreen({ match, onBack, onNext }: LoadLineupScreenProp
               entries={lineups.home}
               onAdd={(section) => addPlayer('home', section)}
               onChange={(section, id, field, value) => changePlayer('home', section, id, field, value)}
+              onToggleAccumulates={(section, id) => toggleAccumulates('home', section, id)}
               onRemove={(section, id) => removePlayer('home', section, id)}
             />
             <TeamLineupCard
@@ -228,6 +287,7 @@ export function LoadLineupScreen({ match, onBack, onNext }: LoadLineupScreenProp
               entries={lineups.away}
               onAdd={(section) => addPlayer('away', section)}
               onChange={(section, id, field, value) => changePlayer('away', section, id, field, value)}
+              onToggleAccumulates={(section, id) => toggleAccumulates('away', section, id)}
               onRemove={(section, id) => removePlayer('away', section, id)}
             />
           </div>
