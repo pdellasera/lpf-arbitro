@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { ChevronRight, Minus, Plus, TriangleAlert } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowLeft, ArrowRight, ChevronRight, Minus, Plus, TriangleAlert } from 'lucide-react'
 import type { ActionConfig, ActionKind, ChoiceOption } from '../../data/actionConfig'
 import type { EventDraft, LiveMatch, Side } from '../../types'
 import { CardTypeOptions } from './CardTypeOptions'
@@ -11,7 +10,8 @@ import { ScoreStrip } from './ScoreStrip'
 import { SegmentedOptions } from './SegmentedOptions'
 
 interface RegisterEventScreenProps {
-  open: boolean
+  /** Id de la pantalla actual (p. ej. 'goal') para hooks de test. */
+  screenId: string
   config: ActionConfig
   match: LiveMatch
   minute: number
@@ -19,9 +19,14 @@ interface RegisterEventScreenProps {
   /** Opción preseleccionada al abrir (p. ej. color de tarjeta o tipo de incidente). */
   presetOption?: string
   onSelectPlayer: (id: string) => void
-  onClose: () => void
-  onSelectAction: (id: ActionKind) => void
+  /** Cambia de acción en el menú "Más" (no se usa en el flujo de 5 pantallas). */
+  onSelectAction?: (id: ActionKind) => void
   onSubmit: (draft: EventDraft) => void
+  /** Navegación del flujo (pie Volver / Siguiente). */
+  onBack: () => void
+  onNext: () => void
+  onLineup?: () => void
+  onLogs?: () => void
 }
 
 function FieldLabel({ children }: { children: ReactNode }) {
@@ -29,16 +34,19 @@ function FieldLabel({ children }: { children: ReactNode }) {
 }
 
 export function RegisterEventScreen({
-  open,
+  screenId,
   config,
   match,
   minute,
   selectedPlayerId,
   presetOption,
   onSelectPlayer,
-  onClose,
   onSelectAction,
   onSubmit,
+  onBack,
+  onNext,
+  onLineup,
+  onLogs,
 }: RegisterEventScreenProps) {
   const [side, setSide] = useState<Side | 'neutral'>('home')
   const [playerId, setPlayerId] = useState<string | null>(null)
@@ -52,9 +60,7 @@ export function RegisterEventScreen({
   const starters = match.players.filter((p) => p.side === side && p.starter)
   const bench = match.players.filter((p) => p.side === side && !p.starter)
 
-  // Resetea el formulario cada vez que se abre (o cambia la acción preseleccionada).
-  useEffect(() => {
-    if (!open) return
+  function resetForm() {
     const homeStarter = match.players.find((p) => p.side === 'home' && p.starter)
     const initial = selectedPlayerId ?? homeStarter?.id ?? null
     setPlayerId(initial)
@@ -65,8 +71,13 @@ export function RegisterEventScreen({
     setAddedMinutes(0)
     setMinuteValue(minute)
     setSide(initial ? (match.players.find((p) => p.id === initial)?.side ?? 'home') : 'home')
+  }
+
+  // Resetea el formulario al cambiar de pantalla (o de acción preseleccionada).
+  useEffect(() => {
+    resetForm()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, presetOption, config.id])
+  }, [config.id, presetOption])
 
   function selectPlayer(id: string) {
     setPlayerId(id)
@@ -96,6 +107,7 @@ export function RegisterEventScreen({
       note: note || undefined,
       addedMinutes,
     })
+    resetForm()
   }
 
   const submitLabel = config.submitLabel ?? `Guardar ${config.label.toLowerCase()}`
@@ -123,20 +135,8 @@ export function RegisterEventScreen({
       ]
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          data-drawer
-          role="dialog"
-          aria-modal="true"
-          aria-label={config.title}
-          initial={{ x: '100%' }}
-          animate={{ x: 0 }}
-          exit={{ x: '100%' }}
-          transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-          className="app-h fixed inset-0 z-50 flex flex-col bg-header-bottom"
-        >
-          <EditScreenTopBar title={config.title} onBack={onClose} />
+    <div data-live-section={screenId} className="flex min-h-0 flex-1 flex-col overflow-hidden bg-header-bottom">
+      <EditScreenTopBar title={config.title} onBack={onBack} onLineup={onLineup} onLogs={onLogs} />
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-[28px] bg-white">
             <div className="min-h-0 flex-1 overflow-y-auto">
             <ScoreStrip home={match.home} away={match.away} score={match.score} />
@@ -147,7 +147,7 @@ export function RegisterEventScreen({
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => onSelectAction(item.id)}
+                      onClick={() => onSelectAction?.(item.id)}
                       className="flex h-[52px] w-full items-center justify-between rounded-xl border border-line bg-white px-4 text-[15px] font-semibold text-ink active:scale-[0.99]"
                     >
                       {item.label}
@@ -288,34 +288,51 @@ export function RegisterEventScreen({
                       </div>
                     </div>
                   )}
+
+                  {showExpulsion && selectedPlayer && (
+                    <div className="flex items-start gap-2.5 rounded-xl border border-pick/30 bg-[#fdecea] px-4 py-3">
+                      <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-pick" />
+                      <p className="text-[14px] font-semibold leading-snug text-pick">
+                        Expulsado {selectedPlayer.name} por acumulación de tarjeta amarilla
+                      </p>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    data-save
+                    onClick={handleSubmit}
+                    className="h-[58px] w-full rounded-xl bg-day-active text-[17px] font-bold text-ink shadow-[0_8px_20px_rgba(247,206,30,0.45)] transition-transform active:scale-[0.98]"
+                  >
+                    {submitLabel}
+                  </button>
                 </>
               )}
             </div>
           </div>
 
-          {!config.moreItems && (
-            <div className="sticky bottom-0 z-10 shrink-0 border-t border-line bg-white px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-              {showExpulsion && selectedPlayer && (
-                <div className="mb-3 flex items-start gap-2.5 rounded-xl border border-pick/30 bg-[#fdecea] px-4 py-3">
-                  <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-pick" />
-                  <p className="text-[14px] font-semibold leading-snug text-pick">
-                    Expulsado {selectedPlayer.name} por acumulación de tarjeta amarilla
-                  </p>
-                </div>
-              )}
+          <div className="sticky bottom-0 z-10 shrink-0 border-t border-line bg-white px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+            <div className="flex gap-3">
               <button
                 type="button"
-                data-save
-                onClick={handleSubmit}
-                className="h-[58px] w-full rounded-xl bg-day-active text-[17px] font-bold text-ink shadow-[0_8px_20px_rgba(247,206,30,0.45)] transition-transform active:scale-[0.98]"
+                data-live-back
+                onClick={onBack}
+                className="flex h-[56px] items-center justify-center gap-2 rounded-2xl bg-badge-gray px-6 text-[16px] font-bold text-ink transition-transform active:scale-95"
               >
-                {submitLabel}
+                <ArrowLeft className="h-5 w-5" />
+                Volver
+              </button>
+              <button
+                type="button"
+                data-live-next
+                onClick={onNext}
+                className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-2xl bg-brand text-[17px] font-extrabold text-white shadow-[0_10px_24px_rgba(0,98,253,0.32)] transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
+              >
+                Siguiente
+                <ArrowRight className="h-5 w-5" />
               </button>
             </div>
-          )}
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </div>
+      </div>
   )
 }

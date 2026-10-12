@@ -17,6 +17,9 @@ export function useLiveMatchState(initial: LiveMatch) {
 
   const recordEvent = (draft: EventDraft) => {
     setMatch((m) => {
+      const secondary = draft.secondaryPlayerId
+        ? m.players.find((p) => p.id === draft.secondaryPlayerId)
+        : undefined
       const event: TimelineEvent = {
         id: nextId(),
         minute: draft.minute,
@@ -24,8 +27,12 @@ export function useLiveMatchState(initial: LiveMatch) {
         side: draft.side,
         player: draft.player,
         playerId: draft.playerId,
+        secondaryPlayerId: draft.secondaryPlayerId,
+        secondaryPlayer: secondary?.name,
         label: draft.reason ?? draft.option ?? draft.note,
         reason: draft.reason,
+        option: draft.option,
+        note: draft.note,
       }
       const score =
         draft.kind === 'goal' && (draft.side === 'home' || draft.side === 'away')

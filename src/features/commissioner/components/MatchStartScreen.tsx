@@ -1,23 +1,31 @@
 import { useState } from 'react'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { MATCH_START_DELAYS, type YesNoValue } from '../data/matchStartDelays'
-import { DelaysCard } from './DelaysCard'
+import { AttendanceCard } from './AttendanceCard'
+import { DelaysCard, type DelayPeriod } from './DelaysCard'
 import { KickoffCard, type ExtraTimePeriod } from './KickoffCard'
 import { MatchStartTopBar } from './MatchStartTopBar'
+import { UniformSimilarityCard } from './UniformSimilarityCard'
 
 interface MatchStartScreenProps {
   onBack: () => void
   onNext: () => void
+  /** Si es false (Árbitro) se ocultan las tarjetas exclusivas del Comisionado. */
+  showExtras?: boolean
 }
 
-/** "Inicio del partido" del Comisionado: pitazos + tiempo extra + retrasos. */
-export function MatchStartScreen({ onBack, onNext }: MatchStartScreenProps) {
+/** "Inicio del partido": pitazos + tiempo extra por periodo (+ tarjetas del Comisionado). */
+export function MatchStartScreen({ onBack, onNext, showExtras = true }: MatchStartScreenProps) {
   const [kickoff, setKickoff] = useState<string | null>(null)
   const [finalTime, setFinalTime] = useState<string | null>(null)
   const [extraTime, setExtraTime] = useState<{ first: number; second: number }>({ first: 0, second: 0 })
   const [delays, setDelays] = useState<Record<string, YesNoValue>>(() =>
     Object.fromEntries(MATCH_START_DELAYS.map((delay) => [delay.id, delay.defaultValue])),
   )
+  const [delayPeriods, setDelayPeriods] = useState<Record<string, DelayPeriod[]>>({})
+  const [uniform, setUniform] = useState<Record<'local' | 'away', YesNoValue>>({ local: 'no', away: 'no' })
+  const [uniformDetail, setUniformDetail] = useState('')
+  const [attendance, setAttendance] = useState<Record<string, string>>({})
 
   function currentTime() {
     const now = new Date()
@@ -30,6 +38,26 @@ export function MatchStartScreen({ onBack, onNext }: MatchStartScreenProps) {
 
   function setDelay(id: string, value: YesNoValue) {
     setDelays((prev) => ({ ...prev, [id]: value }))
+  }
+
+  function toggleDelayPeriod(id: string, period: DelayPeriod) {
+    setDelayPeriods((prev) => {
+      const selected = prev[id] ?? []
+      return {
+        ...prev,
+        [id]: selected.includes(period)
+          ? selected.filter((entry) => entry !== period)
+          : [...selected, period],
+      }
+    })
+  }
+
+  function setUniformSide(side: 'local' | 'away', value: YesNoValue) {
+    setUniform((prev) => ({ ...prev, [side]: value }))
+  }
+
+  function setAttendanceValue(id: string, value: string) {
+    setAttendance((prev) => ({ ...prev, [id]: value }))
   }
 
   return (
@@ -47,7 +75,24 @@ export function MatchStartScreen({ onBack, onNext }: MatchStartScreenProps) {
               extraTime={extraTime}
               onExtraTimeChange={setExtraTimePeriod}
             />
-            <DelaysCard delays={MATCH_START_DELAYS} values={delays} onChange={setDelay} />
+            {showExtras && (
+              <>
+                <DelaysCard
+                  delays={MATCH_START_DELAYS}
+                  values={delays}
+                  periods={delayPeriods}
+                  onChange={setDelay}
+                  onPeriodToggle={toggleDelayPeriod}
+                />
+                <UniformSimilarityCard
+                  values={uniform}
+                  detail={uniformDetail}
+                  onChange={setUniformSide}
+                  onDetailChange={setUniformDetail}
+                />
+                <AttendanceCard values={attendance} onChange={setAttendanceValue} />
+              </>
+            )}
           </div>
           <div className="h-4" />
         </div>

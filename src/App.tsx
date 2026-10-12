@@ -50,14 +50,15 @@ export default function App() {
             />
           ) : view === 'start' && selectedMatch ? (
             <MatchStartScreen
-              onBack={() => setView('pre')}
+              showExtras={role === 'comisionado'}
+              onBack={() => setView(role === 'comisionado' ? 'pre' : 'lineup')}
               onNext={() => setView('match')}
             />
           ) : view === 'lineup' && selectedMatch ? (
             <LoadLineupScreen
               match={selectedMatch}
               onBack={() => setView('detail')}
-              onNext={() => setView('match')}
+              onNext={() => setView('start')}
             />
           ) : view === 'detail' && selectedMatch ? (
             <MatchDetailScreen
@@ -69,7 +70,7 @@ export default function App() {
             <PortraitLiveMatchScreen
               match={selectedMatch}
               autoStart
-              onBack={() => setView(role === 'comisionado' ? 'start' : 'lineup')}
+              onBack={() => setView('start')}
               onHome={() => setView('home')}
             />
           ) : null

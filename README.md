@@ -2,8 +2,8 @@
 
 PWA instalable de la **Liga Panameña de Fútbol** para el informe digital del árbitro:
 login, listado de partidos del día (**Home**), **Detalle del partido** (confirmación previa al
-inicio) e informe en vivo vertical con marcador, pestañas y acciones rápidas
-(**Registro de partido**). Construida con
+inicio) e informe en vivo vertical con 5 pantallas de registro navegables
+(Gol · Cambios · Sanciones · Lesionados · Incidencias). Construida con
 **React 19 + Vite + TypeScript + TailwindCSS v4 + framer-motion + React Query + lucide-react**.
 
 La UI se reconstruyó a partir de análisis de píxeles de los assets del mockup
@@ -204,11 +204,13 @@ src/
 │                               useMatches, mockMatches (listado + detalle del día)
 ├─ features/commissioner/        PreMatchChecklistScreen, MatchStartScreen,
 │                               MatchStartTopBar, KickoffCard, DelaysCard,
-│                               preMatchChecklist, matchStartDelays
+│                               UniformSimilarityCard, AttendanceCard,
+│                               YesNoToggle, preMatchChecklist,
+│                               matchStartDelays, matchStartExtras
 │                               (Lista Previa + Inicio del partido)
-├─ features/match-control/      PortraitLiveMatchScreen, LiveTopBar, LiveScorePanel,
-│                               LiveTabBar, EventActionGrid, LiveTabsContent,
-│                               RegisterEventScreen, useLiveMatchState (informe en vivo)
+├─ features/match-control/      PortraitLiveMatchScreen, RegisterEventScreen,
+│                               EditScreenTopBar, LineupSidebar, LiveTabsContent,
+│                               LogsSidebar, useLiveMatchState, liveSections (informe en vivo)
 ├─ features/pwa/                registerServiceWorker, installState, usePwaInstall,
 │                               InstallModal, InstallInstructions, PwaDebugPanel
 ├─ lib/                         queryClient.ts, cn.ts
@@ -294,12 +296,21 @@ Al pulsar **"Siguiente →"** en la Lista Previa se abre **"Inicio del partido"*
 - **Cuerpo** sobre `bg-page` con `rounded-t-[28px]` (el mismo patrón que el resto de pantallas):
   **"Pitazo inicial"** y **"Pitazo final"** lado a lado (`KickoffCard.tsx`, cada uno con `--:--`,
   "Hora real de inicio/finalización" y botón "Registrar" que rellena la hora), debajo
-  **"Tiempo extra por periodo"** (steppers "Primer tiempo" / "Segundo tiempo") y
-  **"Retrasos durante el partido"** (`DelaysCard.tsx`, tres preguntas Sí/No — "No" por defecto).
+  **"Tiempo extra por periodo"** (steppers "Primer tiempo" / "Segundo tiempo") y las tarjetas
+  exclusivas del Comisionado:
+  - **"Retrasos durante el partido"** (`DelaysCard.tsx`, tres preguntas Sí/No — "No" por defecto).
+    Al marcar **"Sí"** se despliega **"¿En qué periodo fue el retraso?"** (Primer/Segundo tiempo,
+    multiselección).
+  - **"Similitud de uniformes"** (`UniformSimilarityCard.tsx`): **Equipo local** / **Equipo
+    visitante** con Sí/No y un textarea **"Detallar la similitud en los uniformes"**.
+  - **"Asistencia total de fanáticos al estadio"** (`AttendanceCard.tsx`): **"Desglosar la
+    asistencia"** en **General · Jubilados · Niños · Cortesías** (campos numéricos) y el **Total**
+    calculado.
 - **Footer sticky**: **"Volver"** (gris, vuelve a la Lista Previa) y **"Siguiente →"** (azul,
-  abre el **Registro de partido**).
+  abre la primera pantalla de registro (**Gol**)).
 
-Los textos de los retrasos están centralizados en `data/matchStartDelays.ts`.
+Los textos de los retrasos están centralizados en `data/matchStartDelays.ts` y los de las
+tarjetas de uniformes/asistencia en `data/matchStartExtras.ts`.
 
 ## Cargar alineaciones (Árbitro)
 
@@ -310,51 +321,65 @@ Tras el **"Detalle del partido"**, el rol **Árbitro** abre **"Cargar alineacion
 - **Cuerpo** sobre `bg-page` con `rounded-t-[28px]`: para cada equipo, **Titulares** (máx. 11) y
   **Suplentes** (máx. 7) con un botón **"Agregar jugador"** que añade una fila editable
   (**Dorsal**, **Nombre**, **Posición**).
-- **Footer sticky**: **"Volver"** (gris, vuelve al Detalle) y **"Siguiente →"** (azul, abre el
-  **Registro de partido**).
+- **Footer sticky**: **"Volver"** (gris, vuelve al Detalle) y **"Siguiente →"** (azul, abre
+  **"Inicio del partido"**).
 
-## Registro de partido — panel vertical
+## Inicio del partido (Árbitro)
 
-Tras "Siguiente" en "Cargar alineaciones" se abre una pantalla **100% vertical** (sin rotación) compuesta por:
+Tras **"Cargar alineaciones"**, el Árbitro abre **"Inicio del partido"** reutilizando
+`features/commissioner/MatchStartScreen.tsx` con `showExtras={false}` (solo lo necesario):
 
-- **Cabecera oscura** (`LiveTopBar.tsx`): Volver · "Registro de partido" · campana, sobre el
-  gradiente `header-top → header-bottom`.
-- **Panel de marcador** (`LiveScorePanel.tsx`, fondo blanco): liga + jornada con el escudo LPF,
-  pill "EN VIVO" (verde) / "EN PAUSA", y el marcador grande `0 – 0`.
-- **Pestañas** (`LiveTabBar.tsx`): Eventos · Alineaciones · Logs. La activa se marca con
-  icono + etiqueta en azul y un subrayado inferior.
-- **Grid de acciones** (`EventActionGrid.tsx`, en "Eventos"): Gol · Tarjeta amarilla ·
-  Tarjeta roja · Cambio · Lesión · Incidencias. Cada celda abre el panel de
-  evento con la opción preseleccionada (p. ej. el color de la tarjeta o el tipo de
-  incidente).
-- **Alineaciones** (`LiveTabsContent.tsx`): titulares por equipo (local/visitante).
-- **Logs** (`LogsSidebar.tsx`): al tocar la pestaña "Logs" se abre un **sidebar lateral**
-  con el historial de eventos e incidencias registradas.
-- **Footer sticky** (abajo, dos botones en línea): **"Volver"** (gris) y **"Siguiente →"** (azul).
-  Es la misma pantalla para **Árbitro** y **Comisionado**; "Siguiente" abre el **Acta**.
-- **Inicio - finalización**: debajo del marcador siempre se muestra
-  **"Inicio de partido {hora} - Finalización de partido {hora}"** (con `--:--` hasta finalizar).
+- **Cabecera navy** (`MatchStartTopBar.tsx`): flecha atrás (vuelve a "Cargar alineaciones") y el
+  título **"Inicio del partido"** alineado a la izquierda.
+- **Cuerpo** sobre `bg-page` con `rounded-t-[28px]`: **"Pitazo inicial"** y **"Pitazo final"**
+  lado a lado (`KickoffCard.tsx`, cada uno con `--:--`, "Hora real de inicio/finalización" y botón
+  "Registrar" que rellena la hora) y debajo **"Tiempo extra por periodo"** (steppers "Primer tiempo" /
+  "Segundo tiempo"). Sin las tarjetas exclusivas del Comisionado (Retrasos, Similitud de
+  uniformes, Asistencia).
+- **Footer sticky**: **"Volver"** (gris, vuelve a "Cargar alineaciones") y **"Siguiente →"** (azul,
+  abre la primera pantalla de registro (**Gol**)).
 
-La **pantalla de registro** (`live/RegisterEventScreen.tsx`) se abre a **pantalla completa**
-(overlay `fixed inset-0` con barra oscura "Registrar …" con campana + hoja blanca de esquinas redondeadas)
-y conserva el flujo de registro completo (minuto, bando, jugador, opciones, observaciones y CTA amarillo
-"Guardar …"). Para el gol muestra: franja de marcador compacta, selector de jugador, segmentado
-"Juego abierto · Penal · Tiro libre", "Observaciones (opcional)" y "Guardar gol". Para la tarjeta
-muestra las tarjetas de tipo con icono (`Amarilla`/`Roja`, `CardTypeOptions.tsx`), un input de
-texto libre "Motivo" y "Observaciones (opcional)" con CTA "Guardar tarjeta". El color de tarjeta o
-el tipo de incidente se preseleccionan al abrir (vía `presetOption`). Para el cambio muestra el
-selector de bando con los nombres reales de los equipos ("Equipo"), los dos selectores de jugador
-("Jugador que sale" con icono rojo ↓ y "Jugador que ingresa" con icono verde ↑), "Observaciones
-(opcional)" y CTA "Guardar cambio". Para la incidencia muestra la lista vertical "Tipo de
-incidencia" con icono (`IncidentTypeOptions.tsx`: Lesión · Conducta antideportiva · Demora de
-juego · Invasión de campo · Otro), sin selector de equipo, el textarea "Descripción" y el CTA
-"Guardar incidencia".
+## 5 pantallas de registro
+
+Tras "Siguiente" en "Inicio del partido" (Árbitro y Comisionado) se abre directamente la
+**primera pantalla de registro**: **Gol → Cambios → Sanciones → Lesionados →
+Incidencias → Acta de Finalización**. No hay pantalla intermedia de "Registro de partido"; cada
+pantalla **es** el formulario de registro de su sección.
+
+Cada pantalla comparte la misma estructura:
+
+- **Cabecera oscura** (`EditScreenTopBar.tsx`): flecha atrás (Volver; en "Gol" sale al paso anterior
+  del flujo) · título de la acción ("Registrar gol", "Registrar cambio", "Registrar tarjeta",
+  "Registrar lesión", "Registrar incidencia") · Alineaciones · Logs · campana, sobre el gradiente
+  `header-top → header-bottom`.
+- **Marcador compacto** (`ScoreStrip.tsx`): escudos + marcador (p. ej. `0 - 0`) encabezando el formulario.
+- **Formulario** (`RegisterEventScreen.tsx`, en línea — ya no es un overlay): minuto, bando, jugador(es),
+  opciones, motivo/observaciones y el botón amarillo **"Guardar …"** que registra el evento sin cambiar
+  de pantalla. El contenido depende de la acción (`data/liveSections.ts` → `data/actionConfig.ts`):
+  - **Gol**: tipo de gol ("Juego abierto · Penal · Tiro libre") y "Observaciones (opcional)" → "Guardar gol".
+  - **Cambio**: bando con nombres reales, dos selectores ("Jugador que sale" con icono rojo ↓ y
+    "Jugador que ingresa" con icono verde ↑) y "Observaciones (opcional)" → "Guardar cambio".
+  - **Sanciones (tarjeta)**: tipos con icono (`Amarilla`/`Roja`, `CardTypeOptions.tsx`), "Motivo"
+    (input) y "Observaciones (opcional)" → "Guardar tarjeta".
+  - **Lesionados**: único tipo "Lesión" preseleccionado (`singleChoice`) y textarea "Descripción" →
+    "Guardar lesión".
+  - **Incidencias**: lista vertical "Tipo de incidencia" con icono (`IncidentTypeOptions.tsx`:
+    Conducta antideportiva · Demora de juego · Invasión de campo · Otro) y textarea "Descripción" →
+    "Guardar incidencia".
+- **Alineaciones** (`LineupSidebar.tsx` + `LiveTabsContent.tsx`): botón de la cabecera que abre un
+  **panel lateral** con los titulares por equipo (local/visitante).
+- **Logs** (`LogsSidebar.tsx`): botón de la cabecera que abre un **sidebar lateral** con el historial
+  de eventos e incidencias registradas.
+- **Footer sticky** (abajo, dos botones en línea): **"Volver"** (gris, retrocede un paso) y
+  **"Siguiente →"** (azul, avanza un paso; en la última pantalla — Incidencias — abre el
+  **Acta de Finalización**).
 
 Verificación: `tools/layout-check.mjs` abre el partido en Chrome headless en 4 tamaños
-verticales (móvil y tablet), confirma que monta el grid, que las 3 pestañas cambian de
-contenido, que abrir una acción muestra la pantalla de registro y que registrar un gol
-incrementa el marcador; guarda capturas en `tools/shots/` (requiere Chrome y
-`node --experimental-websocket`).
+verticales (móvil y tablet), confirma el paso "Inicio del partido" del Árbitro (pitazos + tiempo extra,
+sin Retrasos) y que montan las 5 pantallas de registro, que "Siguiente" recorre
+Gol → Cambios → Sanciones → Lesionados → Incidencias y "Volver" retrocede, que Alineaciones/Logs
+abren sus paneles laterales y que el botón "Guardar …" registra (p. ej. un gol incrementa el marcador);
+guarda capturas en `tools/shots/` (requiere Chrome y `node --experimental-websocket`).
 
 ## Acta de finalización y documento PDF
 

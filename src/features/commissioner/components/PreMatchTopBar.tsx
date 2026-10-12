@@ -4,7 +4,7 @@ interface PreMatchTopBarProps {
   onBack: () => void
 }
 
-/** Cabecera navy de la Lista Previa (mismo patrón que MatchDetailHeader / LiveTopBar). */
+/** Cabecera navy de la Lista Previa (mismo patrón que MatchDetailHeader / EditScreenTopBar). */
 export function PreMatchTopBar({ onBack }: PreMatchTopBarProps) {
   return (
     <header className="sticky top-0 z-30 shrink-0 bg-gradient-to-b from-header-top to-header-bottom">

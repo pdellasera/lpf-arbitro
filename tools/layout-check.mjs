@@ -1,7 +1,7 @@
 // tools/layout-check.mjs
-// Abre "Registro de partido" (vertical) en Chrome headless a 4 tamaños (móvil/tablet),
-// valida el panel (cabecera, marcador, pestañas, grid 3×2 y CTA) y guarda capturas
-// en tools/shots/.
+// Abre el flujo en vivo (vertical) en Chrome headless a 4 tamaños (móvil/tablet),
+// valida las 5 pantallas de registro (Gol → Cambios → Sanciones → Lesionados → Incidencias)
+// y su navegación Volver/Siguiente, además de Alineaciones/Logs; guarda capturas en tools/shots/.
 //
 // Uso: node --experimental-websocket tools/layout-check.mjs
 // Requiere: Chrome instalado (C:\Program Files\Google\Chrome\Application\chrome.exe).
@@ -152,7 +152,7 @@ async function openLiveMatch(width, height) {
   await send('Page.reload', { ignoreCache: true })
   await waitFor(`document.readyState === 'complete' && document.querySelector('article') !== null`)
 
-  // Home → Detalle → Cargar alineaciones → Registro de partido.
+  // Home → Detalle → Cargar alineaciones → Inicio del partido → primera pantalla de registro (Gol).
   let opened = false
   for (let i = 0; i < 10 && !opened; i++) {
     await evaluate(`(() => { const a = document.querySelector('article'); if (a) a.click() })()`)
@@ -162,13 +162,23 @@ async function openLiveMatch(width, height) {
     const lineupShown = await waitFor(`document.querySelector('[data-lineup-next]') !== null`, 800)
     if (!lineupShown) continue
     await evaluate(`(() => { const b = document.querySelector('[data-lineup-next]'); if (b) b.click() })()`)
-    opened = await waitFor(`document.querySelector('[data-live-grid]') !== null`, 800)
+    const startShown = await waitFor(`document.querySelector('[data-start]') !== null`, 800)
+    if (!startShown) continue
+    ok(await waitFor(`document.querySelector('[data-start-kickoff]') !== null`, 400), 'inicio del partido (árbitro): pitazo inicial presente', '')
+    ok(await waitFor(`document.querySelector('[data-start-final-kickoff]') !== null`, 400), 'inicio del partido (árbitro): pitazo final presente', '')
+    ok(await waitFor(`document.querySelectorAll('[data-start-extra]').length === 2`, 400), 'inicio del partido (árbitro): 2 tiempos extra por periodo', '')
+    ok(await waitFor(`document.querySelectorAll('[data-start-delay]').length === 0`, 400), 'inicio del partido (árbitro): sin Retrasos', '')
+    ok(await waitFor(`document.querySelectorAll('[data-start-uniform]').length === 0`, 400), 'inicio del partido (árbitro): sin Similitud de uniformes', '')
+    ok(await waitFor(`document.querySelectorAll('[data-start-attendance]').length === 0`, 400), 'inicio del partido (árbitro): sin Asistencia', '')
+    await evaluate(`(() => { const b = document.querySelector('[data-start-next]'); if (b) b.click() })()`)
+    opened = await waitFor(`document.querySelector('[data-live-section="goal"]') !== null`, 800)
   }
   if (!opened) {
     const diag = await evaluate(`({
       articles: document.querySelectorAll('article').length,
-      hasGrid: !!document.querySelector('[data-live-grid]'),
-      hasLineup: !!document.querySelector('[data-lineup]'),
+      hasGoal: !!document.querySelector('[data-live-section="goal"]'),
+      hasStart: !!document.querySelector('[data-start]'),
+      hasSection: !!document.querySelector('[data-live-section]'),
       hasDetail: !!document.querySelector('[data-detail-next]'),
       ls: (() => { try { return localStorage.getItem('lpf-session') } catch { return 'ERR' } })(),
       text: document.body ? document.body.innerText.slice(0, 160) : null,
@@ -244,108 +254,105 @@ try {
     await openLiveMatch(vp.width, vp.height)
 
     const info = await evaluate(`(() => {
-      const grid = document.querySelector('[data-live-grid]')
-      const cells = [...document.querySelectorAll('[data-live-action]')]
-      const tabs = [...document.querySelectorAll('[data-tab]')]
       const header = document.querySelector('header')
-      const score = document.querySelector('[data-live-score]')
-      const pill = document.querySelector('[data-live-pill]')
+      const stripScore = document.querySelector('[data-strip-score]')
+      const save = document.querySelector('[data-save]')
       const back = !!document.querySelector('[data-live-back]')
       const next = !!document.querySelector('[data-live-next]')
-      const gridRect = grid ? grid.getBoundingClientRect() : null
       const headerRect = header ? header.getBoundingClientRect() : null
-      const cellRects = cells.map((c) => c.getBoundingClientRect())
-      const cols = gridRect && cellRects.length ? Math.round(gridRect.width / Math.max(1, cellRects[0].width)) : null
-      const activeTab = document.querySelector('[data-tab][aria-pressed="true"]')
+      const section = document.querySelector('[data-live-section]')?.getAttribute('data-live-section') ?? null
       return {
         vw: innerWidth, vh: innerHeight,
-        grid: gridRect ? { w: Math.round(gridRect.width), h: Math.round(gridRect.height) } : null,
-        cells: cells.length,
-        tabs: tabs.length,
-        activeTab: activeTab ? activeTab.getAttribute('data-tab') : null,
-        score: score ? score.textContent.trim() : null,
-        pill: pill ? pill.textContent.trim() : null,
+        section,
+        stripScore: stripScore ? stripScore.textContent.trim() : null,
+        save: save ? save.textContent.trim() : null,
         headerH: headerRect ? Math.round(headerRect.height) : null,
         back,
         next,
-        cols,
       }
     })()`)
 
-    ok(info.grid != null, 'grid de acciones presente')
-    ok(info.cells === 6, '6 acciones en el grid', `${info.cells} celdas`)
-    ok(info.tabs === 3, '3 pestañas', `${info.tabs}`)
-    ok(info.activeTab === 'events', 'pestaña activa por defecto = Eventos', info.activeTab ?? '')
-    ok(info.score === '0 – 0', 'marcador inicial 0 – 0', info.score ?? '')
-    ok(info.pill != null && info.pill.toLowerCase().includes('vivo'), 'pill EN VIVO presente', info.pill ?? '')
+    ok(info.section === 'goal', 'pantalla inicial = Registrar gol', info.section ?? '')
+    ok(info.save === 'Guardar gol', 'formulario de gol presente (CTA Guardar gol)', info.save ?? '')
+    ok(info.stripScore === '0 - 0', 'marcador compacto 0 - 0', info.stripScore ?? '')
     ok(info.headerH != null && info.headerH >= 56, 'cabecera presente', `${info.headerH}px`)
-    ok(info.back, 'Registro de partido muestra Volver', '')
-    ok(info.next, 'Registro de partido muestra Siguiente', '')
-    ok(info.cols === 3, 'grid en 3 columnas', `${info.cols} col`)
+    ok(info.back, 'pantalla muestra Volver', '')
+    ok(info.next, 'pantalla muestra Siguiente', '')
 
-    // Cambio de pestañas → contenido distinto.
-    await evaluate(`(() => { const t = document.querySelector('[data-tab="lineup"]'); if (t) t.click() })()`)
-    ok(await waitFor(`document.querySelector('[data-live-lineup]') !== null`, 800), 'pestaña Alineaciones muestra titulares')
+    // Alineaciones: botón en la cabecera abre el panel lateral de titulares.
+    await evaluate(`(() => { const b = document.querySelector('header button[aria-label="Alineaciones"]'); if (b) b.click() })()`)
+    ok(await waitFor(`document.querySelector('[data-lineup-sidebar]') !== null`, 800), 'Alineaciones abre el panel lateral de titulares')
+    await evaluate(`(() => { const x = document.querySelector('[data-lineup-sidebar] button[aria-label="Cerrar alineaciones"]'); if (x) x.click() })()`)
+    await waitFor(`document.querySelector('[data-lineup-sidebar]') === null`, 800)
 
-    // Pestaña Logs → abre un sidebar lateral con el historial.
-    await evaluate(`(() => { const t = document.querySelector('[data-tab="logs"]'); if (t) t.click() })()`)
-    ok(await waitFor(`document.querySelector('[data-logs-sidebar]') !== null`, 800), 'pestaña Logs abre el sidebar de eventos')
+    // Logs: botón en la cabecera abre el sidebar de eventos.
+    await evaluate(`(() => { const b = document.querySelector('header button[aria-label="Logs"]'); if (b) b.click() })()`)
+    ok(await waitFor(`document.querySelector('[data-logs-sidebar]') !== null`, 800), 'Logs abre el sidebar de eventos')
     await evaluate(`(() => { const x = document.querySelector('[data-logs-sidebar] button[aria-label="Cerrar logs"]'); if (x) x.click() })()`)
     await waitFor(`document.querySelector('[data-logs-sidebar]') === null`, 800)
 
-    // Volver a Eventos y abrir una acción → pantalla de registro a pantalla completa.
-    await evaluate(`(() => { const t = document.querySelector('[data-tab="events"]'); if (t) t.click() })()`)
-    await waitFor(`document.querySelector('[data-live-grid]') !== null`, 800)
-    await evaluate(`(() => { const b = document.querySelector('[data-live-action="ball"]'); if (b) b.click() })()`)
-    ok(await waitFor(`document.querySelector('[data-drawer][aria-label="Registrar gol"]') !== null`, 800), 'abrir acción muestra la pantalla de registro')
+    // Pantalla inicial = formulario "Registrar gol" (sin pantalla intermedia).
+    const shotGoal = await send('Page.captureScreenshot', { format: 'png' })
+    writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}-goal.png`), Buffer.from(shotGoal.result.data, 'base64'))
+    console.log(`  captura → tools/shots/${vp.name}-goal.png`)
 
-    const shotDrawer = await send('Page.captureScreenshot', { format: 'png' })
-    writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}-drawer.png`), Buffer.from(shotDrawer.result.data, 'base64'))
-    console.log(`  captura → tools/shots/${vp.name}-drawer.png`)
+    // Registrar gol: titular local preseleccionado → Guardar gol → 1 - 0.
+    await evaluate(`(() => { const save = document.querySelector('[data-save]'); if (save) save.click() })()`)
+    ok(await waitFor(`document.querySelector('[data-strip-score]')?.textContent.trim() === '1 - 0'`, 800), 'registrar gol incrementa el marcador a 1 - 0')
 
-    // Registrar gol: titular local preseleccionado → Guardar gol → 1 – 0.
-    await evaluate(`(() => {
-      const save = document.querySelector('[data-drawer] button[data-save]'); if (save) save.click()
-    })()`)
-    ok(await waitFor(`document.querySelector('[data-live-score]')?.textContent.trim() === '1 – 0'`, 800), 'registrar gol incrementa el marcador a 1 – 0')
-
-    // El registro se cierra al guardar; capturar el panel principal.
     await new Promise((r) => setTimeout(r, 300))
     const shotMain = await send('Page.captureScreenshot', { format: 'png' })
     writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}.png`), Buffer.from(shotMain.result.data, 'base64'))
     console.log(`  captura → tools/shots/${vp.name}.png`)
 
-    // Flujo tarjeta amarilla: tipos con icono, Motivo (input) y Observaciones.
-    await evaluate(`(() => { const c = document.querySelector('[data-live-action="yellow"]'); if (c) c.click() })()`)
-    ok(await waitFor(`document.querySelector('[data-drawer][aria-label="Registrar tarjeta"]') !== null`, 800), 'abrir tarjeta muestra la pantalla de registro')
-    ok(await waitFor(`document.querySelector('[data-cardtype="yellow"][aria-pressed="true"]') !== null`, 800), 'tarjeta amarilla preseleccionada')
-    ok(await waitFor(`document.querySelector('[data-drawer] input[data-reason]') !== null`, 800), 'campo Motivo (input) presente')
-    ok(await waitFor(`document.querySelector('[data-drawer] textarea[data-note]') !== null`, 800), 'campo Observaciones presente')
-    await evaluate(`(() => { const b = document.querySelector('[data-drawer] button[data-save]'); if (b) b.click() })()`)
-    await waitFor(`document.querySelector('[data-drawer]') === null`, 800)
+    // ── Navegación secuencial: Gol → Cambios → Sanciones → Lesionados → Incidencias. ──
+    const expectSection = (id) =>
+      waitFor(`document.querySelector('[data-live-section]')?.getAttribute('data-live-section') === '${id}'`, 800)
+    const nextStep = () => evaluate(`(() => { const b = document.querySelector('[data-live-next]'); if (b) b.click() })()`)
 
-    // Flujo cambio: selector de equipo con nombres reales, dos selectores de jugador y Observaciones.
-    await evaluate(`(() => { const c = document.querySelector('[data-live-action="sub"]'); if (c) c.click() })()`)
-    ok(await waitFor(`document.querySelector('[data-drawer][aria-label="Registrar cambio"]') !== null`, 800), 'abrir cambio muestra la pantalla de registro')
-    ok(await waitFor(`document.querySelectorAll('[data-drawer] [data-player-select]').length === 2`, 800), 'cambio muestra jugador que sale e ingresa')
-    ok(await waitFor(`document.querySelector('[data-drawer] [data-player-icon="out"]') !== null`, 800), 'icono de salida (rojo) presente')
-    ok(await waitFor(`document.querySelector('[data-drawer] [data-player-icon="in"]') !== null`, 800), 'icono de ingreso (verde) presente')
-    ok(await waitFor(`document.querySelector('[data-drawer] textarea[data-note]') !== null`, 800), 'cambio muestra Observaciones')
-    ok(await waitFor(`document.querySelector('[data-drawer] button[data-save]')?.textContent.trim() === 'Guardar cambio'`, 800), 'CTA Guardar cambio')
-    await evaluate(`(() => { const b = document.querySelector('[data-drawer] button[data-save]'); if (b) b.click() })()`)
+    // Cambios.
+    await nextStep()
+    ok(await expectSection('sub'), 'Siguiente lleva a la pantalla Cambios')
+    ok(await waitFor(`document.querySelector('[data-live-section="sub"] [data-player-select]') !== null`, 800), 'cambio muestra el formulario de cambio')
+    ok(await waitFor(`document.querySelectorAll('[data-live-section="sub"] [data-player-select]').length === 2`, 800), 'cambio muestra jugador que sale e ingresa')
+    ok(await waitFor(`document.querySelector('[data-live-section="sub"] [data-player-icon="out"]') !== null`, 800), 'icono de salida (rojo) presente')
+    ok(await waitFor(`document.querySelector('[data-live-section="sub"] [data-player-icon="in"]') !== null`, 800), 'icono de ingreso (verde) presente')
+    ok(await waitFor(`document.querySelector('[data-live-section="sub"] textarea[data-note]') !== null`, 800), 'cambio muestra Observaciones')
+    ok(await waitFor(`document.querySelector('[data-live-section="sub"] button[data-save]')?.textContent.trim() === 'Guardar cambio'`, 800), 'CTA Guardar cambio')
+    await evaluate(`(() => { const b = document.querySelector('[data-live-section="sub"] button[data-save]'); if (b) b.click() })()`)
 
-    // Flujo incidencia: lista de tipos con icono, Descripción y CTA Guardar incidencia.
-    await evaluate(`(() => { const c = document.querySelector('[data-live-action="injury"]'); if (c) c.click() })()`)
-    ok(await waitFor(`document.querySelector('[data-drawer][aria-label="Registrar incidencia"]') !== null`, 800), 'abrir incidencia muestra la pantalla de registro')
-    ok(await waitFor(`document.querySelectorAll('[data-drawer] [data-incident-option]').length === 5`, 800), 'incidencia muestra 5 tipos')
-    ok(await waitFor(`document.querySelector('[data-drawer] [data-incident-option="injury"][aria-pressed="true"]') !== null`, 800), 'Lesión preseleccionada')
-    ok(await waitFor(`document.querySelector('[data-drawer] [data-minute]') !== null`, 800), 'registro de evento muestra el campo Minuto')
-    ok(await waitFor(`document.querySelector('[data-drawer] textarea[data-note]') !== null`, 800), 'incidencia muestra Descripción')
-    ok(await waitFor(`document.querySelector('[data-drawer] button[data-save]')?.textContent.trim() === 'Guardar incidencia'`, 800), 'CTA Guardar incidencia')
-    await evaluate(`(() => { const b = document.querySelector('[data-drawer] button[data-save]'); if (b) b.click() })()`)
+    // Sanciones (tarjeta).
+    await nextStep()
+    ok(await expectSection('sanction'), 'Siguiente lleva a la pantalla Sanciones')
+    ok(await waitFor(`document.querySelectorAll('[data-live-section="sanction"] [data-cardtype]').length === 2`, 800), 'tarjeta muestra 2 tipos (Amarilla/Roja)')
+    ok(await waitFor(`document.querySelector('[data-live-section="sanction"] input[data-reason]') !== null`, 800), 'campo Motivo (input) presente')
+    ok(await waitFor(`document.querySelector('[data-live-section="sanction"] textarea[data-note]') !== null`, 800), 'campo Observaciones presente')
+    await evaluate(`(() => { const b = document.querySelector('[data-live-section="sanction"] button[data-save]'); if (b) b.click() })()`)
+
+    // Lesionados.
+    await nextStep()
+    ok(await expectSection('injured'), 'Siguiente lleva a la pantalla Lesionados')
+    ok(await waitFor(`document.querySelectorAll('[data-live-section="injured"] [data-incident-option]').length === 1`, 800), 'lesión muestra un único tipo')
+    ok(await waitFor(`document.querySelector('[data-live-section="injured"] [data-incident-option="injury"][aria-pressed="true"]') !== null`, 800), 'Lesión preseleccionada')
+    await evaluate(`(() => { const b = document.querySelector('[data-live-section="injured"] button[data-save]'); if (b) b.click() })()`)
+
+    // Incidencias.
+    await nextStep()
+    ok(await expectSection('incident'), 'Siguiente lleva a la pantalla Incidencias')
+    ok(await waitFor(`document.querySelectorAll('[data-live-section="incident"] [data-incident-option]').length === 4`, 800), 'incidencia muestra 4 tipos')
+    ok(await waitFor(`document.querySelector('[data-live-section="incident"] [data-minute]') !== null`, 800), 'registro de evento muestra el campo Minuto')
+    ok(await waitFor(`document.querySelector('[data-live-section="incident"] textarea[data-note]') !== null`, 800), 'incidencia muestra Descripción')
+    ok(await waitFor(`document.querySelector('[data-live-section="incident"] button[data-save]')?.textContent.trim() === 'Guardar incidencia'`, 800), 'CTA Guardar incidencia')
+    await evaluate(`(() => { const b = document.querySelector('[data-live-section="incident"] button[data-save]'); if (b) b.click() })()`)
+
+    // Volver retrocede una pantalla (Incidencias → Lesionados) y Siguiente vuelve a avanzar.
+    await evaluate(`(() => { const b = document.querySelector('[data-live-back]'); if (b) b.click() })()`)
+    ok(await expectSection('injured'), 'Volver retrocede a la pantalla Lesionados')
+    await nextStep()
+    ok(await expectSection('incident'), 'Siguiente vuelve a la pantalla Incidencias')
 
     // ── Siguiente → Acta (primera pantalla). ──
-    ok(await waitFor(`document.querySelector('[data-live-end-times]') !== null`, 800), 'marcador muestra inicio - finalización')
+    ok(await waitFor(`document.querySelector('[data-strip-score]') !== null`, 800), 'marcador compacto presente antes del Acta')
     await evaluate(`(() => { const b = document.querySelector('[data-live-next]'); if (b) b.click() })()`)
     ok(await waitFor(`document.querySelector('[data-acta]') !== null`, 1000), 'Siguiente abre el Acta (primera pantalla)')
     ok(await waitFor(`document.querySelector('[data-acta-score]') !== null`, 800), 'acta muestra el marcador final')
@@ -428,6 +435,10 @@ try {
     ok(info.next != null && info.next.includes('Siguiente'), 'CTA Siguiente presente', info.next ?? '')
     ok(info.noPressed === 'true', 'opción No seleccionada por defecto', `no=${info.noPressed}`)
     ok(info.yesPressed === 'false', 'opción Sí sin seleccionar', `yes=${info.yesPressed}`)
+    ok(await waitFor(`document.querySelectorAll('[data-start-uniform]').length === 2`, 800), '2 filas de similitud de uniformes (local/visitante)', '')
+    ok(await waitFor(`document.querySelector('[data-start-uniform-detail]') !== null`, 800), 'textarea para detallar la similitud presente', '')
+    ok(await waitFor(`document.querySelectorAll('[data-start-attendance]').length === 4`, 800), '4 categorías de asistencia', '')
+    ok(await waitFor(`document.querySelector('[data-start-attendance-total]')?.textContent.trim() === '0'`, 800), 'total de asistencia inicia en 0', '')
 
     const shotStart = await send('Page.captureScreenshot', { format: 'png' })
     writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}-start.png`), Buffer.from(shotStart.result.data, 'base64'))
@@ -437,6 +448,13 @@ try {
     await evaluate(`(() => { const b = document.querySelector('[data-start-delay="local"] [data-start-option="yes"]'); if (b) b.click() })()`)
     ok(await waitFor(`document.querySelector('[data-start-delay="local"] [data-start-option="yes"]')?.getAttribute('aria-pressed') === 'true'`, 800), 'Sí queda seleccionado al tocar', '')
     ok(await waitFor(`document.querySelector('[data-start-delay="local"] [data-start-option="no"]')?.getAttribute('aria-pressed') === 'false'`, 800), 'No se deselecciona al tocar Sí', '')
+
+    // Al marcar "Sí" se despliega el selector de periodo del retraso (multiselección).
+    ok(await waitFor(`document.querySelector('[data-start-delay-period="local"]') !== null`, 800), 'Sí despliega el periodo del retraso', '')
+    await evaluate(`(() => { const b = document.querySelector('[data-start-delay-period="local"] [data-start-period-option="first"]'); if (b) b.click() })()`)
+    ok(await waitFor(`document.querySelector('[data-start-delay-period="local"] [data-start-period-option="first"]')?.getAttribute('aria-pressed') === 'true'`, 800), 'Primer tiempo queda seleccionado', '')
+    await evaluate(`(() => { const b = document.querySelector('[data-start-delay-period="local"] [data-start-period-option="second"]'); if (b) b.click() })()`)
+    ok(await waitFor(`document.querySelector('[data-start-delay-period="local"] [data-start-period-option="first"]')?.getAttribute('aria-pressed') === 'true' && document.querySelector('[data-start-delay-period="local"] [data-start-period-option="second"]')?.getAttribute('aria-pressed') === 'true'`, 800), 'ambos periodos pueden seleccionarse a la vez', '')
 
     // Registrar pitazo inicial → rellena la hora real de inicio (sin navegar).
     await evaluate(`(() => { const b = document.querySelector('[data-start-kickoff]'); if (b) b.click() })()`)
@@ -450,24 +468,31 @@ try {
     await evaluate(`(() => { const b = document.querySelector('[data-start-extra="first"] [data-start-extra-plus]'); if (b) b.click() })()`)
     ok(await waitFor(`document.querySelector('[data-start-extra="first"] [data-start-extra-value]')?.textContent.includes('1 min')`, 800), 'tiempo extra suma minutos al primer tiempo', '')
 
-    // Siguiente → Registro de partido.
+    // Asistencia: escribir en "General" actualiza el total.
+    await evaluate(`document.querySelector('[data-start-attendance="general"]').focus()`)
+    await send('Input.insertText', { text: '1500' })
+    ok(await waitFor(`document.querySelector('[data-start-attendance-total]')?.textContent.trim() === '1500'`, 800), 'el total suma la asistencia general', '')
+
+    // Siguiente → primera pantalla de registro (Gol).
     await evaluate(`(() => { const b = document.querySelector('[data-start-next]'); if (b) b.click() })()`)
-    ok(await waitFor(`document.querySelector('[data-live-grid]') !== null`, 1200), 'Siguiente abre Registro de partido', '')
+    ok(await waitFor(`document.querySelector('[data-live-section="goal"]') !== null`, 1200), 'Siguiente abre la pantalla Registrar gol', '')
 
     // El flujo comisionado muestra Volver + Siguiente (sin Finalizar/Pausar).
-    ok(await waitFor(`document.querySelector('[data-live-back]') !== null`, 800), 'Registro de partido muestra Volver', '')
-    ok(await waitFor(`document.querySelector('[data-live-next]') !== null`, 800), 'Registro de partido muestra Siguiente', '')
+    ok(await waitFor(`document.querySelector('[data-live-back]') !== null`, 800), 'el flujo muestra Volver', '')
+    ok(await waitFor(`document.querySelector('[data-live-next]') !== null`, 800), 'el flujo muestra Siguiente', '')
     ok(await waitFor(`document.querySelector('[data-finish-half]') === null && document.querySelector('[data-pause-match]') === null`, 400), 'sin Finalizar/Pausar en el flujo comisionado', '')
-    ok(await waitFor(`document.querySelector('[data-live-end-times]') !== null`, 800), 'comisionado: inicio - finalización debajo del marcador', '')
+    ok(await waitFor(`document.querySelector('[data-strip-score]') !== null`, 800), 'comisionado: marcador compacto presente', '')
     ok(await waitFor(`document.querySelector('[data-clock]') === null`, 400), 'comisionado: sin cronómetro', '')
 
     const shotLive = await send('Page.captureScreenshot', { format: 'png' })
     writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}-live.png`), Buffer.from(shotLive.result.data, 'base64'))
     console.log(`  captura → tools/shots/${vp.name}-live.png`)
 
-    // Siguiente → Acta (primera pantalla).
-    await evaluate(`(() => { const b = document.querySelector('[data-live-next]'); if (b) b.click() })()`)
-    ok(await waitFor(`document.querySelector('[data-acta]') !== null`, 1000), 'Siguiente abre el Acta (primera pantalla)', '')
+    // Recorre las 5 pantallas (Gol → Cambios → Sanciones → Lesionados → Incidencias) → Acta.
+    for (let i = 0; i < 5; i++) {
+      await evaluate(`(() => { const b = document.querySelector('[data-live-next]'); if (b) b.click() })()`)
+    }
+    ok(await waitFor(`document.querySelector('[data-acta]') !== null`, 1000), 'Siguiente recorre las 5 pantallas y abre el Acta', '')
   }
 } finally {
   chrome.kill()

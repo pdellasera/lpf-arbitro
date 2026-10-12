@@ -1,57 +1,20 @@
 import { Clock } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { MatchStartDelay, YesNoValue } from '../data/matchStartDelays'
+import { YesNoToggle } from './YesNoToggle'
+
+export type DelayPeriod = 'first' | 'second'
 
 interface DelaysCardProps {
   delays: MatchStartDelay[]
   values: Record<string, YesNoValue>
+  periods: Record<string, DelayPeriod[]>
   onChange: (id: string, value: YesNoValue) => void
+  onPeriodToggle: (id: string, period: DelayPeriod) => void
 }
 
-function YesNoToggle({
-  value,
-  onSelect,
-}: {
-  value: YesNoValue
-  onSelect: (value: YesNoValue) => void
-}) {
-  const base = 'h-9 rounded-lg px-4 text-[14px] font-bold transition-colors'
-  return (
-    <div className="flex shrink-0 gap-2">
-      <button
-        type="button"
-        data-start-option="yes"
-        aria-pressed={value === 'yes'}
-        onClick={() => onSelect('yes')}
-        className={cn(
-          base,
-          value === 'yes'
-            ? 'border border-accent-green bg-accent-green-soft text-accent-green'
-            : 'border border-transparent bg-badge-gray text-badge-gray-ink',
-        )}
-      >
-        Sí
-      </button>
-      <button
-        type="button"
-        data-start-option="no"
-        aria-pressed={value === 'no'}
-        onClick={() => onSelect('no')}
-        className={cn(
-          base,
-          value === 'no'
-            ? 'border border-danger bg-danger-soft text-danger'
-            : 'border border-transparent bg-badge-gray text-badge-gray-ink',
-        )}
-      >
-        No
-      </button>
-    </div>
-  )
-}
-
-/** Tarjeta "Retrasos durante el partido": tres preguntas Sí/No. */
-export function DelaysCard({ delays, values, onChange }: DelaysCardProps) {
+/** Tarjeta "Retrasos durante el partido": tres preguntas Sí/No + periodo(s) del retraso. */
+export function DelaysCard({ delays, values, periods, onChange, onPeriodToggle }: DelaysCardProps) {
   return (
     <section className="rounded-2xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="flex items-start gap-3">
@@ -69,23 +32,55 @@ export function DelaysCard({ delays, values, onChange }: DelaysCardProps) {
       </div>
 
       <div className="mt-4 flex flex-col gap-2.5">
-        {delays.map((delay) => (
-          <div
-            key={delay.id}
-            data-start-delay={delay.id}
-            className="flex items-center gap-3 rounded-xl border border-line bg-white p-3"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-blue-soft">
-              <delay.icon className="h-5 w-5 text-brand" />
-            </span>
-            <p className="min-w-0 flex-1 text-[15px] font-bold leading-tight text-ink">{delay.label}</p>
-            <YesNoToggle
-              value={values[delay.id] ?? delay.defaultValue}
-              onSelect={(value) => onChange(delay.id, value)}
-            />
-          </div>
-        ))}
+        {delays.map((delay) => {
+          const value = values[delay.id] ?? delay.defaultValue
+          const period = periods[delay.id] ?? []
+          return (
+            <div
+              key={delay.id}
+              data-start-delay={delay.id}
+              className="rounded-xl border border-line bg-white p-3"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-blue-soft">
+                  <delay.icon className="h-5 w-5 text-brand" />
+                </span>
+                <p className="min-w-0 flex-1 text-[15px] font-bold leading-tight text-ink">{delay.label}</p>
+                <YesNoToggle
+                  value={value}
+                  onSelect={(selected) => onChange(delay.id, selected)}
+                />
+              </div>
+
+              {value === 'yes' && (
+                <div data-start-delay-period={delay.id} className="mt-3 border-t border-line pt-3">
+                  <p className="text-[14px] font-bold text-ink">¿En qué periodo fue el retraso?</p>
+                  <div className="mt-2 flex gap-2">
+                    {(['first', 'second'] as const).map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        data-start-period-option={option}
+                        aria-pressed={period.includes(option)}
+                        onClick={() => onPeriodToggle(delay.id, option)}
+                        className={cn(
+                          'h-9 flex-1 rounded-lg px-4 text-[14px] font-bold transition-colors',
+                          period.includes(option)
+                            ? 'border border-accent-green bg-accent-green-soft text-accent-green'
+                            : 'border border-transparent bg-badge-gray text-badge-gray-ink',
+                        )}
+                      >
+                        {option === 'first' ? 'Primer tiempo' : 'Segundo tiempo'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </section>
   )
 }
+

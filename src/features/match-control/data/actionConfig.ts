@@ -5,6 +5,7 @@ export type ActionKind =
   | 'card'
   | 'sub'
   | 'incident'
+  | 'injury'
   | 'foul'
   | 'freekick'
   | 'corner'
@@ -129,11 +130,27 @@ export const ACTIONS: Record<ActionKind, ActionConfig> = {
     optionsLabel: 'Tipo de incidencia',
     optionsStyle: 'list',
     options: [
-      { id: 'injury', label: 'Lesión', tone: 'red', icon: 'plus-red' },
       { id: 'misconduct', label: 'Conducta antideportiva', tone: 'red', icon: 'plus-red' },
       { id: 'delay', label: 'Demora de juego', tone: 'red', icon: 'plus-red' },
       { id: 'invasion', label: 'Invasión de campo', tone: 'red', icon: 'invasion' },
       { id: 'other', label: 'Otro', tone: 'navy', icon: 'plus-navy' },
+    ],
+    showNote: true,
+    noteLabel: 'Descripción',
+  },
+  injury: {
+    id: 'injury',
+    label: 'Lesión',
+    title: 'Registrar lesión',
+    submitLabel: 'Guardar lesión',
+    eventKind: 'incident',
+    showSide: false,
+    showPlayers: false,
+    optionsLabel: 'Tipo de lesión',
+    optionsStyle: 'list',
+    singleChoice: true,
+    options: [
+      { id: 'injury', label: 'Lesión', tone: 'red', icon: 'plus-red' },
     ],
     showNote: true,
     noteLabel: 'Descripción',

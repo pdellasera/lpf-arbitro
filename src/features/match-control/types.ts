@@ -43,9 +43,16 @@ export interface TimelineEvent {
   player?: string
   /** Id del jugador implicado (para flagear amonestados sobre la cancha). */
   playerId?: string
+  /** En cambios: jugador que ingresa. */
+  secondaryPlayerId?: string
+  secondaryPlayer?: string
   label?: string
   /** Motivo escrito por el árbitro (p. ej. motivo de la tarjeta). */
   reason?: string
+  /** Opción elegida en el panel (p. ej. tipo de incidencia, color de tarjeta o tipo de gol). */
+  option?: string
+  /** Nota/observación libre escrita por el árbitro. */
+  note?: string
 }
 
 export type MatchPhase = 'pre' | 'first' | 'break' | 'second' | 'ended'
