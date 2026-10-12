@@ -488,7 +488,7 @@ try {
       setter.call(el, '15:30')
       el.dispatchEvent(new Event('input', { bubbles: true }))
     })()`)
-    ok(await waitFor(`document.querySelector('[data-start-time]')?.textContent.trim() === '15:30'`, 800), 'seleccionar hora de inicio actualiza la hora', '')
+    ok(await waitFor(`document.querySelector('[data-start-time]')?.textContent.trim() === '3:30 PM'`, 800), 'seleccionar hora de inicio actualiza la hora (12 h)', '')
 
     // Seleccionar hora de finalización (selector manual, no automático).
     await evaluate(`(() => {
@@ -497,7 +497,7 @@ try {
       setter.call(el, '17:45')
       el.dispatchEvent(new Event('input', { bubbles: true }))
     })()`)
-    ok(await waitFor(`document.querySelector('[data-start-final-time]')?.textContent.trim() === '17:45'`, 800), 'seleccionar hora de finalización actualiza la hora', '')
+    ok(await waitFor(`document.querySelector('[data-start-final-time]')?.textContent.trim() === '5:45 PM'`, 800), 'seleccionar hora de finalización actualiza la hora (12 h)', '')
 
     // Tiempo extra por periodo: sumar minutos al primer tiempo.
     await evaluate(`(() => { const b = document.querySelector('[data-start-extra="first"] [data-start-extra-plus]'); if (b) b.click() })()`)

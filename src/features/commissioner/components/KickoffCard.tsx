@@ -1,4 +1,5 @@
 import { Clock, Minus, Plus, Timer } from 'lucide-react'
+import { format12h } from '@/features/matches/lib/formatDate'
 
 export type ExtraTimePeriod = 'first' | 'second'
 
@@ -30,7 +31,7 @@ export function KickoffCard({
           <p className="text-[13px] font-bold leading-tight text-ink">Pitazo inicial</p>
           <Clock className="mt-2 h-9 w-9 text-brand" strokeWidth={1.5} />
           <p data-start-time className="mt-1 text-[30px] font-extrabold leading-none tabular-nums text-ink">
-            {kickoff ?? '--:--'}
+            {format12h(kickoff)}
           </p>
           <p className="mt-1 text-[12px] leading-tight text-ink-mute">Hora real de inicio</p>
           <input
@@ -47,7 +48,7 @@ export function KickoffCard({
           <p className="text-[13px] font-bold leading-tight text-ink">Pitazo final</p>
           <Clock className="mt-2 h-9 w-9 text-brand" strokeWidth={1.5} />
           <p data-start-final-time className="mt-1 text-[30px] font-extrabold leading-none tabular-nums text-ink">
-            {finalTime ?? '--:--'}
+            {format12h(finalTime)}
           </p>
           <p className="mt-1 text-[12px] leading-tight text-ink-mute">Hora real de finalización</p>
           <input
