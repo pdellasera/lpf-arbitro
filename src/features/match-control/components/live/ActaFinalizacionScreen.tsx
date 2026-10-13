@@ -90,7 +90,7 @@ export function ActaFinalizacionScreen({
             className="flex h-[58px] w-full items-center justify-center gap-2 rounded-2xl bg-day-active text-[17px] font-extrabold text-ink shadow-[0_10px_24px_rgba(9,30,66,0.14)] transition-transform active:scale-[0.99]"
           >
             <Lock className="h-5 w-5" />
-            Cerrar acta del partido
+            Cerrar reporte de partido
           </button>
         </div>
       </main>
@@ -130,10 +130,10 @@ export function ActaFinalizacionScreen({
               </div>
 
               <h2 id="acta-confirm-title" className="mt-4 text-[20px] font-extrabold leading-tight tracking-tight text-ink">
-                Cerrar acta del partido
+                Cerrar reporte de partido
               </h2>
               <p className="mt-2 text-[15px] leading-snug text-ink-soft">
-                Antes de cerrar el acta, verifica que todo quedó completado correctamente. Una vez cerrada, el acta no se puede editar.
+                Antes de cerrar el reporte, verifica que todo quedó completado correctamente. Una vez cerrado, el reporte no se puede editar.
               </p>
 
               <div className="mt-5 flex gap-3">
@@ -151,7 +151,7 @@ export function ActaFinalizacionScreen({
                   data-acta-confirm-accept
                   className="flex h-[52px] flex-1 items-center justify-center rounded-xl bg-day-active text-[16px] font-extrabold text-ink shadow-[0_10px_24px_rgba(9,30,66,0.14)] transition-transform active:scale-[0.97]"
                 >
-                  Cerrar acta
+                  Cerrar reporte
                 </button>
               </div>
             </motion.div>

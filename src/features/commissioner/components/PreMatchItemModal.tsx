@@ -40,6 +40,8 @@ export function PreMatchItemModal({
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
+  const canSave = selected >= 0 || note.trim() !== ''
+
   return (
     <AnimatePresence>
       {open && item && (
@@ -130,7 +132,12 @@ export function PreMatchItemModal({
                 type="button"
                 onClick={() => onSave(selected, note)}
                 data-pre-save
-                className="flex h-[52px] flex-1 items-center justify-center rounded-xl bg-brand text-[16px] font-bold text-white shadow-[0_8px_20px_rgba(0,98,253,0.32)] transition-transform active:scale-[0.97]"
+                disabled={!canSave}
+                aria-disabled={!canSave}
+                className={cn(
+                  'flex h-[52px] flex-1 items-center justify-center rounded-xl bg-brand text-[16px] font-bold text-white shadow-[0_8px_20px_rgba(0,98,253,0.32)] transition-transform active:scale-[0.97]',
+                  !canSave && 'disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none',
+                )}
               >
                 Guardar
               </button>

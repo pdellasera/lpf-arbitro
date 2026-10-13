@@ -20,10 +20,17 @@ export function PreMatchChecklistScreen({ onBack, onNext }: PreMatchChecklistScr
 
   const activeItem = activeId ? (PRE_MATCH_CHECKLIST.find((entry) => entry.id === activeId) ?? null) : null
 
+  const filledCount = PRE_MATCH_CHECKLIST.filter((item) => {
+    const valueIndex = values[item.id] ?? item.valueIndex
+    const observation = observations[item.id] ?? ''
+    return valueIndex >= 0 || observation.trim() !== ''
+  }).length
+  const allFilled = filledCount === PRE_MATCH_CHECKLIST.length
+
   function saveItem(valueIndex: number, observation: string) {
     if (!activeId) return
     setValues((prev) => ({ ...prev, [activeId]: valueIndex }))
-    setObservations((prev) => ({ ...prev, [activeId]: observation }))
+    setObservations((prev) => ({ ...prev, [activeId]: observation.trim() }))
     setActiveId(null)
   }
 
@@ -35,7 +42,7 @@ export function PreMatchChecklistScreen({ onBack, onNext }: PreMatchChecklistScr
         <div className="flex-1 overflow-y-auto px-5 pt-6">
           <h1 className="text-[28px] font-extrabold leading-none tracking-tight text-ink">Antes del partido</h1>
           <p className="mt-2 text-[15px] leading-snug text-ink-soft">
-            Revisión de instalaciones y seguridad. Ya está marcado lo habitual; toque cualquiera para cambiarlo.
+            Revisión de instalaciones y seguridad. Completa todos los puntos para poder continuar.
           </p>
 
           <div data-pre-pill className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-accent-green-soft px-3 py-1.5">
@@ -46,7 +53,8 @@ export function PreMatchChecklistScreen({ onBack, onNext }: PreMatchChecklistScr
             {PRE_MATCH_CHECKLIST.map((item, index) => {
               const valueIndex = values[item.id] ?? item.valueIndex
               const subtitle = valueIndex >= 0 ? item.options[valueIndex] : null
-              const observation = observations[item.id]
+              const observation = observations[item.id] ?? ''
+              const isFilled = valueIndex >= 0 || observation.trim() !== ''
               return (
                 <button
                   key={item.id}
@@ -59,7 +67,7 @@ export function PreMatchChecklistScreen({ onBack, onNext }: PreMatchChecklistScr
                   )}
                 >
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center">
-                    {valueIndex >= 0 && (
+                    {isFilled && (
                       <span data-pre-check className="flex h-full w-full items-center justify-center rounded-2xl bg-accent-green-soft">
                         <Check className="h-5 w-5 text-accent-green" strokeWidth={3} />
                       </span>
@@ -74,7 +82,9 @@ export function PreMatchChecklistScreen({ onBack, onNext }: PreMatchChecklistScr
                       </span>
                     )}
                   </span>
-                  <span data-pre-change={item.id} className="text-[15px] font-semibold text-brand">Cambiar</span>
+                  <span data-pre-action={item.id} data-pre-change={item.id} className="text-[15px] font-semibold text-brand">
+                    {isFilled ? 'Actualizar' : 'Llenar'}
+                  </span>
                 </button>
               )
             })}
@@ -82,6 +92,11 @@ export function PreMatchChecklistScreen({ onBack, onNext }: PreMatchChecklistScr
         </div>
 
         <div className="sticky bottom-0 z-10 shrink-0 border-t border-line bg-white px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+          {!allFilled && (
+            <p data-pre-hint className="mb-2 text-center text-[13px] font-semibold text-ink-soft">
+              Completa los {PRE_MATCH_CHECKLIST.length} puntos para continuar ({filledCount}/{PRE_MATCH_CHECKLIST.length})
+            </p>
+          )}
           <div className="flex gap-3">
             <button
               type="button"
@@ -96,7 +111,12 @@ export function PreMatchChecklistScreen({ onBack, onNext }: PreMatchChecklistScr
               type="button"
               data-pre-next
               onClick={onNext}
-              className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-2xl bg-brand text-[17px] font-extrabold text-white shadow-[0_10px_24px_rgba(0,98,253,0.32)] transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
+              disabled={!allFilled}
+              aria-disabled={!allFilled}
+              className={cn(
+                'flex h-[56px] flex-1 items-center justify-center gap-2 rounded-2xl bg-brand text-[17px] font-extrabold text-white shadow-[0_10px_24px_rgba(0,98,253,0.32)] transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]',
+                !allFilled && 'disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:bg-brand',
+              )}
             >
               Siguiente
               <ArrowRight className="h-5 w-5" />

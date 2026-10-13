@@ -5,7 +5,7 @@ import type { Match } from '@/features/matches/types'
 import type { LiveMatch } from '../../types'
 import { formatShortDate, goalsBySide, halfTimeScore, type GoalRecord } from '../../lib/acta'
 
-/** Datos de demostración sin fuente en el modelo (ver README §Acta de finalización). */
+/** Datos de demostración sin fuente en el modelo (ver README §Reporte de finalización). */
 const GAME_NUMBER = '184'
 const ASESOR = '—'
 const COMISARIO = 'Luis Magallón'
@@ -139,7 +139,7 @@ export function ActaDocumentScreen({ match, live, onBack, onHome }: ActaDocument
           >
             <ArrowLeft className="h-6 w-6" />
           </button>
-          <h1 className="text-[19px] font-bold leading-none tracking-tight text-white">Acta de finalización</h1>
+          <h1 className="text-[19px] font-bold leading-none tracking-tight text-white">Reporte de finalización</h1>
         </div>
       </header>
 

@@ -275,13 +275,17 @@ En el rol **Comisionado**, al tocar la card de un partido la primera pantalla qu
 - **Cuerpo** sobre `bg-page` con `rounded-t-[28px]`: título grande "Antes del partido", subtítulo
   "Revisión de instalaciones y seguridad…", pill verde **"✓ Verificado en sitio"**
   (`bg-accent-green-soft` + `text-accent-green`) y una tarjeta blanca con las filas del checklist
-  (tile verde + título + subtítulo + link "Cambiar"):
+  (tile verde + título + subtítulo + acción "Llenar"/"Actualizar"):
   Similitud de uniformes · Estado del terreno · Alumbrado · Recoge balones ·
   Seguridad (Policía) · Protección Civil · Ambulancias.
-- **Interacción**: tocar una fila (o "Cambiar") abre un modal para elegir la opción del ítem y
-  escribir una **Observación**; al guardar se actualizan el subtítulo y la observación en la fila.
+- **Interacción**: cada fila muestra **"Llenar"** hasta que se completa (opción seleccionada u
+  **Observación** no vacía), momento en que pasa a **"Actualizar"**. Tocar la fila abre un modal para
+  elegir la opción del ítem y escribir la observación; si no se elige opción, la observación es
+  obligatoria para guardar.
 - **Footer sticky** (`bg-white`, safe-area): botón cuadrado "volver" (`bg-badge-gray`) a la
-  izquierda y CTA **"Siguiente →"** azul (`bg-brand`) a la derecha, que abre **Cargar alineaciones**.
+  izquierda y CTA **"Siguiente →"** azul (`bg-brand`) a la derecha. El CTA permanece deshabilitado
+  hasta completar los 7 ítems (se muestra un contador de progreso); al completarlos habilita y abre
+  **Cargar alineaciones**.
 
 Los textos del checklist (etiquetas y opciones) están centralizados en
 `data/preMatchChecklist.ts` para ajustarlos al mockup oficial sin tocar la UI.
@@ -343,7 +347,7 @@ Tras el **"Detalle del partido"**, el Árbitro abre **"Inicio del partido"** reu
 
 Tras "Siguiente" en "Inicio del partido" (Árbitro y Comisionado) se abre directamente la
 **primera pantalla de registro**: **Gol → Cambios → Sanciones → Lesionados →
-Incidencias → Acta de Finalización**. No hay pantalla intermedia de "Registro de partido"; cada
+Incidencias → Reporte de Finalización**. No hay pantalla intermedia de "Registro de partido"; cada
 pantalla **es** el formulario de registro de su sección.
 
 Cada pantalla comparte la misma estructura:
@@ -372,7 +376,7 @@ Cada pantalla comparte la misma estructura:
   de eventos e incidencias registradas.
 - **Footer sticky** (abajo, dos botones en línea): **"Volver"** (gris, retrocede un paso) y
   **"Siguiente →"** (azul, avanza un paso; en la última pantalla — Incidencias — abre el
-  **Acta de Finalización**).
+  **Reporte de Finalización**).
 
 Verificación: `tools/layout-check.mjs` abre el partido en Chrome headless en 4 tamaños
 verticales (móvil y tablet), confirma el paso "Inicio del partido" del Árbitro (pitazos + tiempo extra,
@@ -381,22 +385,22 @@ Gol → Cambios → Sanciones → Lesionados → Incidencias y "Volver" retroced
 abren sus paneles laterales y que el botón "Guardar …" registra (p. ej. un gol incrementa el marcador);
 guarda capturas en `tools/shots/` (requiere Chrome y `node --experimental-websocket`).
 
-## Acta de finalización y documento PDF
+## Reporte de finalización y documento PDF
 
 Al terminar la **2ª parte** (`phase === 'ended'`) ya no se muestra el footer "Partido finalizado":
-en su lugar aparece la pantalla **"Acta de finalización"** y, al confirmarla, el **documento
+en su lugar aparece la pantalla **"Reporte de finalización"** y, al confirmarla, el **documento
 estandarizado de la federación** listo para compartir/descargar:
 
 - **`live/ActaFinalizacionScreen.tsx`** — pantalla de cierre (clon del mockup): cabecera navy
-  (`ActaTopBar.tsx`, "Acta de finalización" + subtítulo), tarjeta blanca `ActaSummaryCard.tsx` con
+  (`ActaTopBar.tsx`, "Reporte de finalización" + subtítulo), tarjeta blanca `ActaSummaryCard.tsx` con
   el pill "Resultado final", escudos + marcador `2 - 1` + descanso `(1 - 0)` y las 4 filas
   Fecha / Hora de inicio / Hora de finalización / Duración; debajo, la **firma según el rol**
   (**"Firma del Árbitro"** o **"Firma del Comisionado"**) con `SignaturePad.tsx` (canvas propio sin
-  librerías, exportable a dataURL) y el CTA amarillo `Lock + "Cerrar acta del partido"`, que antes
+  librerías, exportable a dataURL) y el CTA amarillo `Lock + "Cerrar reporte de partido"`, que antes
   de cerrar muestra un **aviso de confirmación** ("verifica que todo quedó completado correctamente;
-  una vez cerrada, el acta no se puede editar").
+  una vez cerrado, el reporte no se puede editar").
 - **`acta/ActaDocumentScreen.tsx`** — documento oficial **"INFORME DEL ÁRBITRO"** (clon del mockup
-  federativo) que se abre al pulsar "Cerrar acta": banner verde desechable ("Informe enviado a la
+  federativo) que se abre al pulsar "Cerrar reporte": banner verde desechable ("Informe enviado a la
   LPF…"), encabezado con águila LPF en tinta (`lpf-ink.webp` + wordmark "LIGA / Panameña / de
   Fútbol") / título / escudo de la federación, filas de identificación (nº de juego, jornada,
   equipos), rejilla de datos (sede, fecha, hora, resultado, medio tiempo, equipo arbitral), tablas

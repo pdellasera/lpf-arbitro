@@ -233,6 +233,22 @@ async function openPreMatchChecklist(width, height) {
   await new Promise((r) => setTimeout(r, 300))
 }
 
+// Llena los 7 ítems de la Lista Previa (elige la primera opción) para habilitar "Siguiente".
+async function fillPreMatchChecklist() {
+  const ids = ['uniforms', 'pitch', 'lighting', 'ballboys', 'security', 'civil', 'ambulances']
+  for (const id of ids) {
+    await evaluate(`(() => { const r = document.querySelector('[data-pre-row="${id}"]'); if (r) r.click() })()`)
+    if (!(await waitFor(`document.querySelector('[data-pre-modal]') !== null`, 800))) {
+      throw new Error('no se abrió el modal al llenar: ' + id)
+    }
+    await evaluate(`(() => { const o = document.querySelector('[data-pre-modal] [data-pre-option="0"]'); if (o) o.click() })()`)
+    await evaluate(`(() => { const b = document.querySelector('[data-pre-modal] [data-pre-save]'); if (b) b.click() })()`)
+    if (!(await waitFor(`document.querySelector('[data-pre-modal]') === null`, 800))) {
+      throw new Error('no se cerró el modal al llenar: ' + id)
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // 4. Validaciones + capturas
 // ---------------------------------------------------------------------------
@@ -355,13 +371,13 @@ try {
     ok(await waitFor(`document.querySelector('[data-acta]') !== null`, 1000), 'Siguiente abre el Acta (primera pantalla)')
     ok(await waitFor(`document.querySelector('[data-acta-score]') !== null`, 800), 'acta muestra el marcador final')
     ok(await waitFor(`document.querySelector('[data-acta-clear]') !== null`, 800), 'acta muestra el botón Limpiar')
-    ok(await waitFor(`document.querySelector('[data-acta-close]') !== null`, 800), 'acta muestra el CTA Cerrar acta del partido')
+    ok(await waitFor(`document.querySelector('[data-acta-close]') !== null`, 800), 'acta muestra el CTA Cerrar reporte de partido')
     ok(await waitFor(`document.querySelector('[data-acta-signature-title]')?.textContent.trim() === 'Firma del Árbitro'`, 800), 'acta (árbitro) pide la firma del árbitro')
 
-    // Cerrar acta → aviso de confirmación (verificar antes de cerrar) → documento oficial.
+    // Cerrar reporte → aviso de confirmación (verificar antes de cerrar) → documento oficial.
     await evaluate(`(() => { const b = document.querySelector('[data-acta-close]'); if (b) b.click() })()`)
-    ok(await waitFor(`document.querySelector('[data-acta-confirm]') !== null`, 800), 'Cerrar acta muestra el aviso de confirmación')
-    ok(await waitFor(`document.querySelector('[data-acta-confirm-accept]') !== null`, 800), 'el aviso ofrece Cerrar acta')
+    ok(await waitFor(`document.querySelector('[data-acta-confirm]') !== null`, 800), 'Cerrar reporte muestra el aviso de confirmación')
+    ok(await waitFor(`document.querySelector('[data-acta-confirm-accept]') !== null`, 800), 'el aviso ofrece Cerrar reporte')
     ok(await waitFor(`document.querySelector('[data-acta-confirm-cancel]') !== null`, 800), 'el aviso ofrece Cancelar')
     await evaluate(`(() => { const b = document.querySelector('[data-acta-confirm-accept]'); if (b) b.click() })()`)
     ok(await waitFor(`document.querySelector('[data-acta-doc]') !== null`, 1000), 'Confirmar cierre abre el documento')
@@ -383,6 +399,8 @@ try {
       rows: document.querySelectorAll('[data-pre-row]').length,
       pill: document.querySelector('[data-pre-pill]')?.textContent.trim() ?? null,
       next: document.querySelector('[data-pre-next]')?.textContent.trim() ?? null,
+      nextDisabled: document.querySelector('[data-pre-next]')?.disabled ?? null,
+      actions: [...document.querySelectorAll('[data-pre-action]')].map((el) => el.textContent.trim()),
       back: !!document.querySelector('[data-pre-back]'),
     }))()`)
 
@@ -390,15 +408,17 @@ try {
     ok(info.pill != null && info.pill.includes('Verificado en sitio'), 'pill Verificado en sitio presente', info.pill ?? '')
     ok(info.next != null && info.next.includes('Siguiente'), 'CTA Siguiente presente', info.next ?? '')
     ok(info.back, 'botón volver (cuadrado) presente', '')
+    ok(info.actions.length === 7 && info.actions.every((t) => t === 'Llenar'), 'cada ítem muestra "Llenar" al inicio', JSON.stringify(info.actions))
+    ok(info.nextDisabled === true, 'Siguiente deshabilitado hasta completar todo', `disabled=${info.nextDisabled}`)
 
     // Estado inicial: ninguna opción preseleccionada (ni valor ni check verde).
     const initial = await evaluate(`document.querySelector('[data-pre-row="lighting"]')?.textContent ?? ''`)
     ok(!initial.includes('Funciona correctamente'), 'ninguna opción aparece seleccionada de entrada', '')
     ok(await waitFor(`document.querySelector('[data-pre-row="lighting"] [data-pre-check]') === null`, 400), 'sin check verde de entrada', '')
 
-    // Tocar una fila (o "Cambiar") abre el modal con opciones + observación.
+    // Tocar una fila (o "Llenar") abre el modal con opciones + observación.
     await evaluate(`(() => { const r = document.querySelector('[data-pre-row="lighting"]'); if (r) r.click() })()`)
-    ok(await waitFor(`document.querySelector('[data-pre-modal]') !== null`, 800), 'Cambiar abre el modal del ítem', '')
+    ok(await waitFor(`document.querySelector('[data-pre-modal]') !== null`, 800), 'Llenar abre el modal del ítem', '')
     ok(await waitFor(`document.querySelectorAll('[data-pre-modal] [data-pre-option]').length === 2`, 800), 'modal muestra las opciones del ítem', '')
     ok(await waitFor(`document.querySelector('[data-pre-modal] textarea[data-pre-note]') !== null`, 800), 'modal muestra el textarea de observación', '')
 
@@ -410,6 +430,7 @@ try {
     ok(await waitFor(`document.querySelector('[data-pre-row="lighting"]')?.textContent.includes('Funciona correctamente')`, 800), 'la opción elegida queda en la fila', '')
     ok(await waitFor(`document.querySelector('[data-pre-row="lighting"] [data-pre-check]') !== null`, 800), 'check verde aparece al guardar', '')
     ok(await waitFor(`document.querySelector('[data-pre-row="lighting"] [data-pre-observation]')?.textContent.includes('Probar iluminación')`, 800), 'la observación queda visible en la fila', '')
+    ok(await waitFor(`document.querySelector('[data-pre-row="lighting"] [data-pre-action]')?.textContent.trim() === 'Actualizar'`, 800), 'la fila llena muestra "Actualizar"', '')
 
     const shotPre = await send('Page.captureScreenshot', { format: 'png' })
     writeFileSync(join(process.cwd(), 'tools', 'shots', `${vp.name}-pre.png`), Buffer.from(shotPre.result.data, 'base64'))
@@ -420,6 +441,8 @@ try {
   for (const vp of VIEWPORTS) {
     console.log(`\n=== ${vp.name}-start (${vp.width}x${vp.height}) ===`)
     await openPreMatchChecklist(vp.width, vp.height)
+    await fillPreMatchChecklist()
+    ok(await waitFor(`document.querySelector('[data-pre-next]')?.disabled === false`, 800), 'Siguiente se habilita tras completar los 7 ítems', '')
     await evaluate(`(() => { const b = document.querySelector('[data-pre-next]'); if (b) b.click() })()`)
     if (!(await waitFor(`document.querySelector('[data-lineup-next]') !== null`, 1500))) {
       throw new Error('no se abrió Cargar alineaciones (comisario)')

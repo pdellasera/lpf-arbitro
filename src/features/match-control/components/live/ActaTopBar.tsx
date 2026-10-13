@@ -4,7 +4,7 @@ interface ActaTopBarProps {
   onBack: () => void
 }
 
-/** Cabecera navy de la pantalla "Acta de finalización" (título + subtítulo). */
+/** Cabecera navy de la pantalla "Reporte de finalización" (título + subtítulo). */
 export function ActaTopBar({ onBack }: ActaTopBarProps) {
   return (
     <header className="relative sticky top-0 z-30 shrink-0 bg-gradient-to-b from-header-top to-header-bottom px-4 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))]">
@@ -17,9 +17,9 @@ export function ActaTopBar({ onBack }: ActaTopBarProps) {
         <ArrowLeft className="h-6 w-6" />
       </button>
       <div className="flex flex-col items-center px-12 text-center">
-        <h1 className="text-[22px] font-extrabold leading-none tracking-tight text-white">Acta de finalización</h1>
+        <h1 className="text-[22px] font-extrabold leading-none tracking-tight text-white">Reporte de finalización</h1>
         <p className="mt-2 max-w-[300px] text-[14px] leading-snug text-white/85">
-          Revisa la información del partido y firma para cerrar el acta.
+          Revisa la información del partido y firma para cerrar el reporte.
         </p>
       </div>
     </header>
